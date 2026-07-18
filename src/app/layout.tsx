@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
+import { Fraunces, Geist_Mono, Instrument_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const inter = Inter({
+const instrumentSans = Instrument_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const spaceGrotesk = Space_Grotesk({
+const fraunces = Fraunces({
   variable: "--font-display",
   subsets: ["latin"],
+  axes: ["opsz", "SOFT", "WONK"],
 });
 
 const geistMono = Geist_Mono({
@@ -35,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
+      className={`dark ${instrumentSans.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
