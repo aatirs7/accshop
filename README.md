@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ACCSHOP
 
-## Getting Started
+Premium storefront + integrated CRM for selling established TikTok Affiliate accounts. Next.js (App Router) · Neon Postgres · Drizzle · Auth.js · Stripe + Zelle · Resend.
 
-First, run the development server:
+## What's inside
+
+- **Storefront** — premium dark homepage, catalog (tiered, extensible), product pages, testimonials, warranty policy, contact, bulk-inquiry, and an application-gated partner program.
+- **Checkout** — card (Stripe Checkout) or Zelle (manual confirmation with a unique order-code memo). Guest-feel but account-backed: every order is tied to a user.
+- **Customer dashboard** — order pipeline (Sourcing → Credentials ready → Delivered), **one-time encrypted credential reveal**, live warranty countdown, and warranty claims.
+- **Admin CRM** — orders workbench (advance fulfillment, mark Zelle paid, assign supplier + cost → live margin, attach/revoke credentials), customers with LTV, partners with wholesale pricing rules + commission ledger, suppliers, and queues for applications / bulk inquiries / warranty claims, plus a reporting overview (revenue, margin, **Stripe/Zelle rail mix**, source split, top LTV).
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env.local     # fill in the generated secrets below
+npm run db:migrate             # applies schema to the embedded PGlite dev DB
+npm run db:seed                # sample product, testimonials, admin, demo orders
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Dev uses an **embedded PGlite database** (`DATABASE_URL=pglite`, stored in `./.pglite`) — no Postgres install needed. Set `DATABASE_URL` to a `postgres://` (Neon) URL to use real Postgres.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Generate the two required secrets:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+node -e "console.log('AUTH_SECRET='+require('crypto').randomBytes(32).toString('base64url'))"
+node -e "console.log('CREDENTIAL_KEY_V1='+require('crypto').randomBytes(32).toString('base64'))"
+```
 
-## Learn More
+Set `ADMIN_EMAILS` to your email — it's auto-promoted to admin on sign-in. Without a `RESEND_API_KEY`, all emails (including magic-link sign-in links) print to the server console, so you can still sign in locally.
 
-To learn more about Next.js, take a look at the following resources:
+## Tests & verification
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm test                                               # unit: crypto, status machine, order codes
+npx tsx --env-file=.env.local scripts/verify-flows.ts  # end-to-end order lifecycle (dev server must be stopped)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`verify-flows.ts` exercises: mark-paid + idempotency, one-deliverable-per-account, reveal-once atomicity + admin unlock, referral-vs-wholesale commission accrual, and the Zelle expiry sweep.
 
-## Deploy on Vercel
+## Deploying to Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Create a **Neon** project; set `DATABASE_URL` to its pooled connection string.
+2. Run `npm run db:migrate` against it (locally with that `DATABASE_URL`, or via CI).
+3. Set env vars in Vercel (see `.env.example`): `AUTH_SECRET`, `CREDENTIAL_KEY_V1` (store a copy in a password manager — losing it makes undelivered credentials unrecoverable), `ADMIN_EMAILS`, `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ZELLE_RECIPIENT_NAME`, `ZELLE_RECIPIENT_HANDLE`, `CRON_SECRET`.
+4. Add the Stripe webhook endpoint `→ /api/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`) and paste its signing secret into `STRIPE_WEBHOOK_SECRET`.
+5. `vercel.json` already schedules the daily Zelle-expiry cron; Vercel sends `CRON_SECRET` as the bearer token.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Payment note
+
+The payment layer is an interface (`src/lib/payments/provider.ts`); Stripe and Zelle are independent rails and all order/margin/commission state lives in our DB, so a Stripe pause never freezes the business. The admin reporting page surfaces the Stripe/Zelle revenue mix so processor concentration stays visible.
+
+## Before launch
+
+- Replace the **sample testimonials** (seeded, flagged `[SAMPLE]`) with real customer quotes in Admin → Testimonials.
+- Set the real Zelle recipient details.
+- Point `APP_URL` / `EMAIL_FROM` at your domain.
