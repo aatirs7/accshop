@@ -36,11 +36,11 @@ export default async function AccountsPage() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 flex flex-wrap justify-center gap-6">
           {catalog.map((p) => (
             <Card
               key={p.id}
-              className="group relative overflow-hidden border-border/60 transition-colors hover:border-brand-gold/50"
+              className="group relative w-full max-w-sm overflow-hidden border-border/60 transition-colors hover:border-brand-gold/50"
             >
               <CardHeader>
                 <div className="flex items-center justify-between">
