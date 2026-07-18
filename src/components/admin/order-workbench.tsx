@@ -187,7 +187,7 @@ export function AttachCredentialsForm({ deliverableId }: { deliverableId: string
       </div>
       <p className="text-xs text-muted-foreground">
         Stored AES-256-GCM encrypted. After saving, plaintext is never shown
-        again — only a fingerprint.
+        again, only a fingerprint.
       </p>
     </form>
   );

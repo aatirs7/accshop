@@ -47,7 +47,7 @@ export default async function AdminOrdersPage() {
         <Card className="border-brand-warning/40">
           <CardHeader>
             <CardTitle className="text-base text-brand-warning">
-              Zelle — awaiting payment ({zelleQueue.length})
+              Zelle, awaiting payment ({zelleQueue.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -79,7 +79,7 @@ export default async function AdminOrdersPage() {
                         action={markZellePaid.bind(null, o.id)}
                         promptText={`Zelle reference / confirmation number for ${o.orderCode} (${formatMoney(o.totalCents)}):`}
                         variant="default"
-                        successText="Marked paid — fulfillment started"
+                        successText="Marked paid, fulfillment started"
                         allowEmpty
                       >
                         Mark paid

@@ -24,7 +24,7 @@ export default async function CheckoutSuccessPage({
         <div className="max-w-md rounded-2xl border border-border/60 bg-card/70 p-10 text-center">
           <p className="font-display text-2xl">Checkout not completed</p>
           <p className="mt-3 text-sm text-muted-foreground">
-            No payment was taken. Your cart is safe — you can try again
+            No payment was taken. Your cart is safe, you can try again
             whenever you&apos;re ready.
           </p>
           <Button asChild className="mt-6">
@@ -48,10 +48,10 @@ export default async function CheckoutSuccessPage({
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           {paid
             ? "We're sourcing your account now. You'll get an email the moment your credentials are ready."
-            : "Your payment is being confirmed — this page will reflect it shortly, and you'll get a confirmation email."}
+            : "Your payment is being confirmed, this page will reflect it shortly, and you'll get a confirmation email."}
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
-          Track everything from your dashboard — sign in with the email you
+          Track everything from your dashboard, sign in with the email you
           used at checkout.
         </p>
         <Button asChild className="mt-6">

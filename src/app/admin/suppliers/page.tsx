@@ -64,7 +64,7 @@ export default async function AdminSuppliersPage() {
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {s.contactHandle ?? "—"}
+                      {s.contactHandle ?? "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       {st ? Number(st.fulfilled) : 0}
@@ -74,10 +74,10 @@ export default async function AdminSuppliersPage() {
                         ? formatMoney(Math.round(Number(st.avgCostCents)))
                         : s.defaultCostCents
                           ? `${formatMoney(s.defaultCostCents)} (default)`
-                          : "—"}
+                          : "-"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {st ? formatMoney(Number(st.totalCostCents)) : "—"}
+                      {st ? formatMoney(Number(st.totalCostCents)) : "-"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">

@@ -12,7 +12,7 @@ const steps = [
   {
     n: "03",
     title: "Secure delivery",
-    body: "Credentials are encrypted and delivered through your dashboard — never by email — with our warmup guide.",
+    body: "Credentials are encrypted and delivered through your dashboard, never by email, with our warmup guide.",
   },
   {
     n: "04",
@@ -25,7 +25,7 @@ export function ProcessSteps() {
   return (
     <ol className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
       {steps.map((s) => (
-        <li key={s.n} className="relative">
+        <li key={s.n} className="relative flex flex-col items-center text-center">
           <span className="font-display text-5xl font-light text-brand-gold/30">
             {s.n}
           </span>

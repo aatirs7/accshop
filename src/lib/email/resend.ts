@@ -6,7 +6,7 @@ const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 /**
  * Transactional email wrapper. Email failure must never block a payment or
- * fulfillment transition — errors are logged, not thrown. In dev without a
+ * fulfillment transition, errors are logged, not thrown. In dev without a
  * RESEND_API_KEY, emails are printed to the console (including magic links,
  * which is how you sign in locally).
  */

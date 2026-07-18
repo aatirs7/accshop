@@ -22,7 +22,7 @@ import { audit } from "@/lib/audit";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-/** Manual Zelle confirmation — converges on the same path as the Stripe webhook. */
+/** Manual Zelle confirmation, converges on the same path as the Stripe webhook. */
 export async function markZellePaid(
   orderId: string,
   zelleReference: string,
@@ -96,7 +96,7 @@ export async function advanceOrderStage(
       );
     await sendEmail({
       to: order.user.email,
-      subject: `Your account is ready — ${order.orderCode}`,
+      subject: `Your account is ready, ${order.orderCode}`,
       react: CredentialsReadyEmail({
         orderCode: order.orderCode,
         dashboardUrl: `${env.APP_URL}/dashboard/orders/${order.orderCode}`,

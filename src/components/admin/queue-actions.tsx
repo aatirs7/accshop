@@ -44,7 +44,7 @@ export function ApplicationActions({ applicationId }: { applicationId: string })
         disabled={pending}
         onClick={() => {
           const raw = window.prompt(
-            "Referral commission % for this partner (0 for none — wholesale-pricing only):",
+            "Referral commission % for this partner (0 for none, wholesale-pricing only):",
             "10",
           );
           if (raw === null) return;
@@ -59,7 +59,7 @@ export function ApplicationActions({ applicationId }: { applicationId: string })
                 applicationId,
                 pct > 0 ? Math.round(pct * 100) : null,
               ),
-            "Approved — partner created & notified",
+            "Approved, partner created & notified",
           );
         }}
       >
@@ -125,7 +125,7 @@ export function ClaimActions({ claimId }: { claimId: string }) {
       <Button size="sm" variant="outline" disabled={pending} onClick={() => act("in_review", "in review")}>
         In review
       </Button>
-      <Button size="sm" disabled={pending} onClick={() => act("replaced", "approved — replacement")}>
+      <Button size="sm" disabled={pending} onClick={() => act("replaced", "approved, replacement")}>
         Replace
       </Button>
       <Button size="sm" variant="outline" disabled={pending} onClick={() => act("refunded", "refunded")}>

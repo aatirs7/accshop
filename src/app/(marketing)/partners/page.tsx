@@ -10,7 +10,7 @@ const offers = [
   },
   {
     title: "Referral commissions",
-    body: "Send your students to buy direct — you earn a commission on every sale attributed to you, without touching fulfillment or support.",
+    body: "Send your students to buy direct, you earn a commission on every sale attributed to you, without touching fulfillment or support.",
   },
   {
     title: "Hybrid",
@@ -22,15 +22,15 @@ export default function PartnersPage() {
   return (
     <main className="bg-atmosphere">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="max-w-2xl">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">
             Coach &amp; mentor program
           </p>
-          <h1 className="mt-2 font-display text-4xl font-medium leading-tight sm:text-5xl">
+          <h1 className="mt-2 font-display text-4xl font-medium leading-tight text-balance sm:text-5xl">
             The account supply behind serious TikTok Shop mentors
           </h1>
-          <p className="mt-4 leading-relaxed text-muted-foreground">
-            Your students need affiliate-ready accounts. We keep you supplied —
+          <p className="mt-4 leading-relaxed text-muted-foreground text-balance">
+            Your students need affiliate-ready accounts. We keep you supplied,
             or pay you for sending them our way. Partner status is by
             application only; pricing is never public.
           </p>
@@ -63,7 +63,7 @@ export default function PartnersPage() {
               </li>
               <li>
                 <strong className="text-foreground">2. We review personally.</strong>{" "}
-                Every partner is vetted — usually within 24–48 hours.
+                Every partner is vetted, usually within 24–48 hours.
               </li>
               <li>
                 <strong className="text-foreground">3. Your rates go live.</strong>{" "}

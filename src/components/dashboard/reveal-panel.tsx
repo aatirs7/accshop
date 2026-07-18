@@ -31,7 +31,7 @@ export function RevealPanel({ deliverableId }: { deliverableId: string }) {
   if (saved) {
     return (
       <p className="text-sm text-brand-success">
-        Credentials delivered ✓ — stored on your side. Warranty countdown is
+        Credentials delivered ✓, stored on your side. Warranty countdown is
         running.
       </p>
     );
@@ -41,7 +41,7 @@ export function RevealPanel({ deliverableId }: { deliverableId: string }) {
     return (
       <div className="space-y-3 rounded-lg border border-brand-gold/40 bg-background p-4">
         <p className="text-sm font-semibold text-brand-warning">
-          Save these now — they will not be shown again.
+          Save these now, they will not be shown again.
         </p>
         <dl className="space-y-2">
           {payload.fields.map((f) => (

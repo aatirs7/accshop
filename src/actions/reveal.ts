@@ -70,7 +70,7 @@ export async function revealCredential(
   }
   const cred = deliverable.credential;
   if (!cred || deliverable.status === "pending") {
-    return deny("not_ready", "Credentials aren't ready yet — we'll email you when they are.");
+    return deny("not_ready", "Credentials aren't ready yet, we'll email you when they are.");
   }
   if (cred.revoked) {
     return deny("revoked", "These credentials are no longer available. Contact support if you need them.");
@@ -93,7 +93,7 @@ export async function revealCredential(
     }
   }
 
-  // Atomic lock — the row update IS the mutex.
+  // Atomic lock, the row update IS the mutex.
   const locked = await db
     .update(credentials)
     .set({
@@ -120,7 +120,7 @@ export async function revealCredential(
     );
   } catch (err) {
     console.error("Credential decrypt failed", deliverable.id, err);
-    return deny("decrypt_failed", "Something went wrong — contact support.");
+    return deny("decrypt_failed", "Something went wrong, contact support.");
   }
 
   // First reveal = the moment of delivery. Warranty starts now.

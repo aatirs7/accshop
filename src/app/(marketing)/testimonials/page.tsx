@@ -16,12 +16,14 @@ export default async function TestimonialsPage() {
   return (
     <main className="bg-atmosphere">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">
-          Testimonials
-        </p>
-        <h1 className="mt-2 max-w-2xl font-display text-4xl font-medium sm:text-5xl">
-          What buyers and mentors say
-        </h1>
+        <div className="text-center">
+          <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">
+            Testimonials
+          </p>
+          <h1 className="mt-2 font-display text-4xl font-medium sm:text-5xl">
+            What buyers and mentors say
+          </h1>
+        </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {all.map((t) => (
             <TestimonialCard key={t.id} t={t} />

@@ -16,7 +16,7 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default("ACCSHOP <onboarding@resend.dev>"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  // 32 bytes, base64 — encrypts delivered account credentials at rest
+  // 32 bytes, base64, encrypts delivered account credentials at rest
   CREDENTIAL_KEY_V1: z.string().min(40),
   CREDENTIAL_KEY_VERSION: z.coerce.number().int().default(1),
   ADMIN_EMAILS: z.string().default(""),

@@ -193,7 +193,7 @@ export default async function AdminPartnerDetailPage({
             <code className="rounded bg-background px-1.5 py-0.5">
               /accounts?ref={partner.id}
             </code>{" "}
-            — students who buy through it are attributed for commission.
+           , students who buy through it are attributed for commission.
           </p>
         </CardContent>
       </Card>

@@ -31,14 +31,14 @@ export default async function AdminClaimsPage() {
       <div>
         <h1 className="font-display text-3xl font-medium">Warranty claims</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          &ldquo;Replace&rdquo; creates a fresh deliverable on the same order —
+          &ldquo;Replace&rdquo; creates a fresh deliverable on the same order,
           source it and attach new credentials as usual.
         </p>
       </div>
       {claims.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            No claims — long may it last.
+            No claims, long may it last.
           </CardContent>
         </Card>
       )}

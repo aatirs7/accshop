@@ -38,7 +38,7 @@ async function main() {
       .insert(products)
       .values({
         slug: "tiktok-affiliate-100k",
-        name: "TikTok Affiliate Account — 100K Tier",
+        name: "TikTok Affiliate Account, 100K Tier",
         tierLabel: "100K",
         followerMin: 100_000,
         retailPriceCents: 55_000,
@@ -85,7 +85,7 @@ async function main() {
     ]);
   }
 
-  // --- testimonials (SAMPLE ONLY — replace with real customer quotes) ------
+  // --- testimonials (SAMPLE ONLY, replace with real customer quotes) ------
   const existingTestimonials = await db.query.testimonials.findMany();
   if (existingTestimonials.length === 0) {
     await db.insert(testimonials).values([
@@ -93,7 +93,7 @@ async function main() {
         authorName: "Sample Testimonial",
         authorHandle: "@replace_me",
         content:
-          "[SAMPLE — replace with a real customer quote before launch] Account was delivered within a day with clean credentials and the warmup guide made onboarding easy.",
+          "[SAMPLE, replace with a real customer quote before launch] Account was delivered within a day with clean credentials and the warmup guide made onboarding easy.",
         rating: 5,
         source: "sample",
         featured: true,
@@ -103,7 +103,7 @@ async function main() {
         authorName: "Sample Testimonial 2",
         authorHandle: "@replace_me_2",
         content:
-          "[SAMPLE — replace with a real customer quote before launch] Ordered 10 accounts for my students, all delivered in 48 hours with warranty.",
+          "[SAMPLE, replace with a real customer quote before launch] Ordered 10 accounts for my students, all delivered in 48 hours with warranty.",
         rating: 5,
         source: "sample",
         featured: true,
@@ -113,7 +113,7 @@ async function main() {
         authorName: "Sample Testimonial 3",
         authorHandle: "@replace_me_3",
         content:
-          "[SAMPLE — replace with a real customer quote before launch] Support replaced an account under warranty with zero hassle.",
+          "[SAMPLE, replace with a real customer quote before launch] Support replaced an account under warranty with zero hassle.",
         rating: 5,
         source: "sample",
         featured: false,
@@ -189,7 +189,7 @@ async function main() {
                 { label: "Linked email", value: `demo${i + 1}@example.com` },
                 { label: "Email password", value: "Demo-Email-Pass-456!" },
               ],
-              notes: "Demo credentials — not a real account.",
+              notes: "Demo credentials, not a real account.",
             };
             const enc = encryptCredential(payload, d.id);
             await db.insert(credentials).values({

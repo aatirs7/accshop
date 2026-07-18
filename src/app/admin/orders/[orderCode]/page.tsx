@@ -119,7 +119,7 @@ export default async function AdminOrderDetailPage({
               Supplier cost
             </p>
             <p className="mt-1 font-display text-2xl">
-              {costsKnown ? formatMoney(costCents) : "—"}
+              {costsKnown ? formatMoney(costCents) : "-"}
             </p>
             {!costsKnown && (
               <p className="text-xs text-muted-foreground">
@@ -134,7 +134,7 @@ export default async function AdminOrderDetailPage({
               Margin
             </p>
             <p className="mt-1 font-display text-2xl text-brand-gold">
-              {costsKnown ? formatMoney(order.totalCents - costCents) : "—"}
+              {costsKnown ? formatMoney(order.totalCents - costCents) : "-"}
             </p>
           </CardContent>
         </Card>
@@ -154,7 +154,7 @@ export default async function AdminOrderDetailPage({
               successText="Marked paid"
               allowEmpty
             >
-              Mark Zelle paid — {formatMoney(order.totalCents)}
+              Mark Zelle paid, {formatMoney(order.totalCents)}
             </PromptActionButton>
           )}
           {order.paymentStatus === "paid" && next && (
@@ -172,7 +172,7 @@ export default async function AdminOrderDetailPage({
           )}
           {order.paymentStatus === "pending" && order.paymentMethod === "stripe" && (
             <p className="text-sm text-muted-foreground">
-              Awaiting Stripe payment — confirmed automatically by webhook.
+              Awaiting Stripe payment, confirmed automatically by webhook.
             </p>
           )}
         </CardContent>

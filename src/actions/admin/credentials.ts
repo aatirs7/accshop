@@ -26,7 +26,7 @@ const attachSchema = z.object({
 
 /**
  * Encrypts and stores credentials for one deliverable. Plaintext never
- * round-trips back to the admin UI — only a fingerprint is shown after save.
+ * round-trips back to the admin UI, only a fingerprint is shown after save.
  */
 export async function attachCredentials(
   _prev: ActionResult | null,

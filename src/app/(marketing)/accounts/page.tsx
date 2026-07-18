@@ -23,16 +23,18 @@ export default async function AccountsPage() {
   return (
     <main className="bg-atmosphere">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">
-          Catalog
-        </p>
-        <h1 className="mt-2 font-display text-4xl font-medium sm:text-5xl">
-          Choose your tier
-        </h1>
-        <p className="mt-4 max-w-xl text-muted-foreground">
-          Every account is affiliate-eligible, sourced for low ban risk, and
-          covered by our 30-day replacement warranty.
-        </p>
+        <div className="text-center">
+          <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">
+            Catalog
+          </p>
+          <h1 className="mt-2 font-display text-4xl font-medium sm:text-5xl">
+            Choose your tier
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-muted-foreground text-balance">
+            Every account is affiliate-eligible, sourced for low ban risk, and
+            covered by our 30-day replacement warranty.
+          </p>
+        </div>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {catalog.map((p) => (

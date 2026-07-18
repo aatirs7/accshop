@@ -26,7 +26,7 @@ interface PaymentProvider {
 }
 
 /**
- * The rest of the app never imports Stripe (or any processor) directly —
+ * The rest of the app never imports Stripe (or any processor) directly,
  * adding a replacement rail is one new entry here.
  */
 const providers: Record<PaymentMethod, PaymentProvider> = {

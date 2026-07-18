@@ -68,6 +68,6 @@ export function pipelineStage(order: {
     return { key: "credentials_ready", label: "Credentials ready" };
   const warranty = warrantyState(order.deliveredAt);
   if (warranty.status === "active")
-    return { key: "warranty_active", label: "Delivered — warranty active" };
-  return { key: "warranty_expired", label: "Delivered — warranty expired" };
+    return { key: "warranty_active", label: "Delivered, warranty active" };
+  return { key: "warranty_expired", label: "Delivered, warranty expired" };
 }

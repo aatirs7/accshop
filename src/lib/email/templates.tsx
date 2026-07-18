@@ -74,7 +74,7 @@ function Shell({ preview, heading, children }: { preview: string; heading: strin
           {children}
           <Hr style={styles.hr} />
           <Text style={styles.footer}>
-            ACCSHOP — Premium TikTok Affiliate Accounts. Questions? Just reply
+            ACCSHOP, Premium TikTok Affiliate Accounts. Questions? Just reply
             to this email.
           </Text>
         </Container>
@@ -110,7 +110,7 @@ export function OrderConfirmationEmail(props: {
   dashboardUrl: string;
 }) {
   return (
-    <Shell preview={`Order ${props.orderCode} confirmed`} heading="Payment received — order confirmed">
+    <Shell preview={`Order ${props.orderCode} confirmed`} heading="Payment received, order confirmed">
       <Text style={styles.text}>
         We&apos;ve received your payment for {props.quantity}×{" "}
         {props.productName}. Total: {props.totalFormatted}.
@@ -156,7 +156,7 @@ export function ZelleInstructionsEmail(props: {
         <Text style={styles.code}>{props.orderCode}</Text>
       </Section>
       <Text style={styles.text}>
-        We confirm Zelle payments manually — usually within a few hours. Your
+        We confirm Zelle payments manually, usually within a few hours. Your
         order is held for 48 hours.
       </Text>
       <Section style={{ margin: "24px 0" }}>
@@ -180,7 +180,7 @@ export function CredentialsReadyEmail(props: {
         by email.
       </Text>
       <Text style={styles.text}>
-        <strong>Heads up:</strong> credentials are shown once — have a safe
+        <strong>Heads up:</strong> credentials are shown once, have a safe
         place ready to store them (password manager recommended).
       </Text>
       <Section style={{ margin: "24px 0" }}>

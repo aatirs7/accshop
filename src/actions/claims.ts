@@ -82,7 +82,7 @@ export async function submitWarrantyClaim(
     adminEmails.map((to) =>
       sendEmail({
         to,
-        subject: `Warranty claim — ${deliverable.order.orderCode}`,
+        subject: `Warranty claim, ${deliverable.order.orderCode}`,
         react: AdminNotifyEmail({
           heading: "New warranty claim",
           lines: [

@@ -140,7 +140,7 @@ export default async function AdminOverviewPage() {
               </TableBody>
             </Table>
             <p className="mt-4 text-xs text-muted-foreground">
-              Referral commissions — accrued:{" "}
+              Referral commissions, accrued:{" "}
               <strong>{formatMoney(comms.accruedCents)}</strong> · paid out:{" "}
               {formatMoney(comms.paidCents)}
             </p>

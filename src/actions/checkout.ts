@@ -35,7 +35,7 @@ export async function startCheckout(
   if (method === "stripe" && !stripeConfigured()) {
     return {
       ok: false,
-      error: "Card payments are temporarily unavailable — please use Zelle.",
+      error: "Card payments are temporarily unavailable, please use Zelle.",
     };
   }
 

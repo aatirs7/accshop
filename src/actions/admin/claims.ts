@@ -13,8 +13,8 @@ import type { ActionResult } from "./orders";
 
 const STATUS_LABELS: Record<string, string> = {
   in_review: "In review",
-  replaced: "Approved — replacement on the way",
-  refunded: "Approved — refunded",
+  replaced: "Approved, replacement on the way",
+  refunded: "Approved, refunded",
   denied: "Denied",
 };
 
@@ -75,7 +75,7 @@ export async function resolveClaim(
 
   await sendEmail({
     to: claim.user.email,
-    subject: `Warranty claim update — ${claim.order.orderCode}`,
+    subject: `Warranty claim update, ${claim.order.orderCode}`,
     react: WarrantyClaimUpdateEmail({
       orderCode: claim.order.orderCode,
       statusLabel: STATUS_LABELS[resolution] ?? resolution,

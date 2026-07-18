@@ -74,7 +74,7 @@ export async function approveApplication(
 
   await sendEmail({
     to: email,
-    subject: "You're approved — ACCSHOP Partner Program",
+    subject: "You're approved, ACCSHOP Partner Program",
     react: AdminNotifyEmail({
       heading: "Welcome to the ACCSHOP partner program",
       lines: [
@@ -84,7 +84,7 @@ export async function approveApplication(
       ],
       url: `${env.APP_URL}/login`,
     }),
-    text: `Your ACCSHOP partner application is approved. Sign in with this email at ${env.APP_URL}/login — wholesale rates apply automatically at checkout.`,
+    text: `Your ACCSHOP partner application is approved. Sign in with this email at ${env.APP_URL}/login, wholesale rates apply automatically at checkout.`,
   });
 
   revalidatePath("/admin/applications");

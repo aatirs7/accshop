@@ -19,7 +19,7 @@ function createDb(): Database {
     // neon-serverless (WebSocket) rather than neon-http: supports transactions
     return drizzleNeon(pool, { schema }) as unknown as Database;
   }
-  // Embedded dev database — no local Postgres install needed
+  // Embedded dev database, no local Postgres install needed
   return drizzlePglite(new PGlite("./.pglite"), { schema });
 }
 

@@ -63,7 +63,7 @@ export async function markOrderPaid(
       confirmedBy: opts.confirmedByUserId ?? null,
     });
 
-    // One deliverable per account purchased — fulfillment tracks each
+    // One deliverable per account purchased, fulfillment tracks each
     // individually (supplier, cost, credentials, warranty claims).
     await tx.insert(deliverables).values(
       Array.from({ length: order.quantity }, () => ({
@@ -108,7 +108,7 @@ export async function markOrderPaid(
 
   await sendEmail({
     to: order.user.email,
-    subject: `Order confirmed — ${order.orderCode}`,
+    subject: `Order confirmed, ${order.orderCode}`,
     react: OrderConfirmationEmail({
       orderCode: order.orderCode,
       productName: order.product.name,
@@ -123,11 +123,11 @@ export async function markOrderPaid(
     adminEmails.map((to) =>
       sendEmail({
         to,
-        subject: `Paid order: ${order.orderCode} — ${formatMoney(order.totalCents)}`,
+        subject: `Paid order: ${order.orderCode}, ${formatMoney(order.totalCents)}`,
         react: AdminNotifyEmail({
           heading: "New paid order",
           lines: [
-            `${order.orderCode} — ${order.quantity}× ${order.product.name}`,
+            `${order.orderCode}, ${order.quantity}× ${order.product.name}`,
             `Total: ${formatMoney(order.totalCents)} via ${opts.method}`,
             `Customer: ${order.user.email}`,
           ],

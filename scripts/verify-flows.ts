@@ -27,7 +27,7 @@ import {
 
 let failures = 0;
 function check(name: string, cond: boolean, detail?: string) {
-  console.log(`${cond ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${cond ? "PASS" : "FAIL"}  ${name}${detail ? `, ${detail}` : ""}`);
   if (!cond) failures++;
 }
 
@@ -110,7 +110,7 @@ async function main() {
     .returning();
   check("credential stored encrypted (no plaintext column)", !JSON.stringify(cred).includes("Str0ng!Pass"));
 
-  // The atomic reveal lock — same statement the reveal action uses
+  // The atomic reveal lock, same statement the reveal action uses
   const revealOnce = () =>
     db
       .update(credentials)

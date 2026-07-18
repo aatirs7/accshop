@@ -81,7 +81,7 @@ export function CheckoutForm(props: {
         />
         <p className="text-xs text-muted-foreground">
           Your credentials are delivered to a secure dashboard tied to this
-          email — double-check it.
+          email, double-check it.
         </p>
       </div>
 
@@ -92,7 +92,7 @@ export function CheckoutForm(props: {
             {
               id: "zelle",
               title: "Zelle",
-              desc: "No fees. We confirm your transfer manually — usually within a few hours.",
+              desc: "No fees. We confirm your transfer manually, usually within a few hours.",
             },
             {
               id: "stripe",
@@ -144,7 +144,7 @@ export function CheckoutForm(props: {
         {pending
           ? "Preparing your order…"
           : method === "zelle"
-            ? "Place order — get Zelle instructions"
+            ? "Place order, get Zelle instructions"
             : "Continue to secure card payment"}
       </Button>
     </form>

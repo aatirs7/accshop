@@ -16,7 +16,7 @@ export function stripeConfigured(): boolean {
 
 /**
  * Creates a Stripe Checkout Session for an order. Product naming stays
- * neutral (catalog name only) — marketing copy lives on our pages, not in
+ * neutral (catalog name only), marketing copy lives on our pages, not in
  * Stripe metadata. The webhook, not the redirect, is the sole authority for
  * marking the order paid.
  */

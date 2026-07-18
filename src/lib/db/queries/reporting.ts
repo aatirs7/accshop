@@ -42,7 +42,7 @@ export async function revenueSummary(sinceDays?: number) {
   };
 }
 
-/** Stripe vs Zelle revenue split — the processor-risk gauge. */
+/** Stripe vs Zelle revenue split, the processor-risk gauge. */
 export async function railMix() {
   return db
     .select({

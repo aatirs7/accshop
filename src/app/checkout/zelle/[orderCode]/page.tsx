@@ -92,7 +92,7 @@ export default async function ZelleInstructionsPage({
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wider text-muted-foreground">
-                Memo — required
+                Memo, required
               </dt>
               <dd className="mt-2 inline-block rounded-lg border border-brand-gold/40 bg-background px-5 py-3 font-mono text-2xl tracking-[0.15em] text-brand-gold">
                 {order.orderCode}
@@ -110,7 +110,7 @@ export default async function ZelleInstructionsPage({
             <li>1. Open your banking app and choose Zelle.</li>
             <li>2. Send the exact amount with the memo code above.</li>
             <li>
-              3. We confirm manually — usually within a few hours. You&apos;ll
+              3. We confirm manually, usually within a few hours. You&apos;ll
               get an email the moment it&apos;s confirmed.
             </li>
           </ol>

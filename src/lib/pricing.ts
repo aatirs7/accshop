@@ -10,7 +10,7 @@ export interface ResolvedPrice {
 
 /**
  * Retail price unless the buyer is an approved partner with a qty-tier rule
- * for this product — then the highest min_qty ≤ ordered qty wins. Partner
+ * for this product, then the highest min_qty ≤ ordered qty wins. Partner
  * pricing is never applied for suspended partners.
  */
 export async function resolveUnitPrice(

@@ -4,7 +4,7 @@ import { auditLogs } from "@/lib/db/schema";
 
 /**
  * Append-only audit trail. Written for every credential reveal (attempted or
- * successful) and every admin mutation. Never throws — an audit failure must
+ * successful) and every admin mutation. Never throws, an audit failure must
  * not take down the action it records, but it is logged loudly.
  */
 export async function audit(entry: {

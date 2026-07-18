@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ACCSHOP — Premium TikTok Affiliate Accounts",
+    default: "ACCSHOP, Premium TikTok Affiliate Accounts",
     template: "%s | ACCSHOP",
   },
   description:
