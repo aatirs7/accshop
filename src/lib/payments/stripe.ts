@@ -25,10 +25,17 @@ export async function createStripeCheckout(order: {
   orderCode: string;
   quantity: number;
   unitPriceCents: number;
+  totalCents: number;
   productName: string;
   customerEmail: string;
 }): Promise<{ redirectUrl: string; checkoutSessionId: string }> {
   const stripe = getStripe();
+  // Single line priced at the final order total (already reflects variant and
+  // any discount), so the charge always matches our recorded total exactly.
+  const lineName =
+    order.quantity > 1
+      ? `${order.productName} (×${order.quantity})`
+      : order.productName;
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer_email: order.customerEmail,
@@ -36,11 +43,11 @@ export async function createStripeCheckout(order: {
     metadata: { order_id: order.id, order_code: order.orderCode },
     line_items: [
       {
-        quantity: order.quantity,
+        quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: order.unitPriceCents,
-          product_data: { name: order.productName },
+          unit_amount: order.totalCents,
+          product_data: { name: lineName },
         },
       },
     ],

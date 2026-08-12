@@ -4,7 +4,14 @@ import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { orders, partners, products, users } from "@/lib/db/schema";
+import {
+  emailCaptures,
+  orders,
+  partners,
+  productVariants,
+  products,
+  users,
+} from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { resolveUnitPrice } from "@/lib/pricing";
 import { generateOrderCode } from "@/lib/orders/code";
@@ -18,6 +25,8 @@ const checkoutSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   method: z.enum(["stripe", "zelle"]),
   ref: z.string().optional(),
+  variantId: z.string().optional(),
+  discountCode: z.string().trim().optional(),
 });
 
 export type CheckoutResult = { ok: false; error: string };
@@ -30,7 +39,8 @@ export async function startCheckout(
   if (!parsed.success) {
     return { ok: false, error: "Please check your email and quantity." };
   }
-  const { productSlug, quantity, method, ref } = parsed.data;
+  const { productSlug, quantity, method, ref, variantId, discountCode } =
+    parsed.data;
 
   if (method === "stripe" && !stripeConfigured()) {
     return {
@@ -84,7 +94,37 @@ export async function startCheckout(
     }
   }
 
-  const totalCents = price.unitPriceCents * quantity;
+  // Variant price delta (e.g. "Enable TikTok Shop" +$50), on top of resolved price.
+  let variant: { id: string; label: string; priceDeltaCents: number } | null =
+    null;
+  if (variantId) {
+    const v = await db.query.productVariants.findFirst({
+      where: and(
+        eq(productVariants.id, variantId),
+        eq(productVariants.productId, product.id),
+      ),
+    });
+    if (v) variant = { id: v.id, label: v.label, priceDeltaCents: v.priceDeltaCents };
+  }
+  const unitPriceCents = price.unitPriceCents + (variant?.priceDeltaCents ?? 0);
+
+  // One-time email-capture discount (flat, order-level).
+  let appliedDiscountCode: string | null = null;
+  let discountCents = 0;
+  if (discountCode) {
+    const capture = await db.query.emailCaptures.findFirst({
+      where: eq(emailCaptures.discountCode, discountCode.toUpperCase()),
+    });
+    if (capture && !capture.redeemedAt) {
+      appliedDiscountCode = capture.discountCode;
+      discountCents = capture.discountAmountCents;
+    }
+  }
+
+  const subtotal = unitPriceCents * quantity;
+  // Never discount below $1 so the payment stays valid.
+  const totalCents = Math.max(100, subtotal - discountCents);
+  discountCents = subtotal - totalCents;
 
   let order;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -97,7 +137,11 @@ export async function startCheckout(
           partnerId,
           productId: product.id,
           quantity,
-          unitPriceCents: price.unitPriceCents,
+          unitPriceCents,
+          variantId: variant?.id ?? null,
+          variantLabel: variant?.label ?? null,
+          discountCode: appliedDiscountCode,
+          discountCents,
           totalCents,
           paymentMethod: method as PaymentMethod,
           source,
@@ -115,7 +159,14 @@ export async function startCheckout(
     action: "order.created",
     entityType: "order",
     entityId: order.id,
-    metadata: { orderCode: order.orderCode, method, quantity, totalCents },
+    metadata: {
+      orderCode: order.orderCode,
+      method,
+      quantity,
+      totalCents,
+      variant: variant?.label ?? null,
+      discountCode: appliedDiscountCode,
+    },
   });
 
   let redirectUrl: string;
@@ -124,9 +175,9 @@ export async function startCheckout(
       id: order.id,
       orderCode: order.orderCode,
       quantity,
-      unitPriceCents: price.unitPriceCents,
+      unitPriceCents,
       totalCents,
-      productName: product.name,
+      productName: variant ? `${product.name} (${variant.label})` : product.name,
       customerEmail: email,
     });
     redirectUrl = initiated.redirectUrl;

@@ -4,10 +4,69 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { suppliers, testimonials } from "@/lib/db/schema";
+import {
+  suppliers,
+  testimonialSubmissions,
+  testimonials,
+} from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { audit } from "@/lib/audit";
 import type { ActionResult } from "./orders";
+
+/** Approve a submitted review: copy it into published testimonials. */
+export async function approveSubmission(
+  submissionId: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const sub = await db.query.testimonialSubmissions.findFirst({
+    where: eq(testimonialSubmissions.id, submissionId),
+  });
+  if (!sub) return { ok: false, error: "Submission not found." };
+  if (sub.status !== "new") return { ok: false, error: "Already reviewed." };
+
+  await db.insert(testimonials).values({
+    authorName: sub.authorName,
+    authorHandle: sub.authorHandle,
+    headline: sub.headline,
+    content: sub.content,
+    rating: sub.rating,
+    source: "submission",
+    published: true,
+  });
+  await db
+    .update(testimonialSubmissions)
+    .set({ status: "approved", reviewedBy: admin.id, decidedAt: new Date() })
+    .where(eq(testimonialSubmissions.id, submissionId));
+
+  await audit({
+    actorUserId: admin.id,
+    action: "testimonial.submission_approved",
+    entityType: "testimonial_submission",
+    entityId: submissionId,
+  });
+  revalidatePath("/admin/testimonials");
+  revalidatePath("/testimonials");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function rejectSubmission(
+  submissionId: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  await db
+    .update(testimonialSubmissions)
+    .set({ status: "rejected", reviewedBy: admin.id, decidedAt: new Date() })
+    .where(eq(testimonialSubmissions.id, submissionId));
+  await audit({
+    actorUserId: admin.id,
+    action: "testimonial.submission_rejected",
+    entityType: "testimonial_submission",
+    entityId: submissionId,
+  });
+  revalidatePath("/admin/testimonials");
+  return { ok: true };
+}
 
 const supplierSchema = z.object({
   name: z.string().trim().min(1).max(200),

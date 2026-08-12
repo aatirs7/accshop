@@ -218,6 +218,35 @@ export function WarrantyClaimUpdateEmail(props: {
   );
 }
 
+export function WelcomeDiscountEmail(props: {
+  discountCode: string;
+  amountFormatted: string;
+  shopUrl: string;
+}) {
+  return (
+    <Shell
+      preview={`Here's your ${props.amountFormatted} off code`}
+      heading={`${props.amountFormatted} off your first account`}
+    >
+      <Text style={styles.text}>
+        Thanks for joining ACCSHOP. Use this code at checkout for{" "}
+        {props.amountFormatted} off your first account:
+      </Text>
+      <Section style={{ margin: "20px 0" }}>
+        <Text style={styles.code}>{props.discountCode}</Text>
+      </Section>
+      <Text style={styles.text}>
+        It's a one-time code tied to this email. Ready when you are.
+      </Text>
+      <Section style={{ margin: "24px 0" }}>
+        <Button style={styles.button} href={props.shopUrl}>
+          Browse accounts
+        </Button>
+      </Section>
+    </Shell>
+  );
+}
+
 export function AdminNotifyEmail(props: { heading: string; lines: string[]; url: string }) {
   return (
     <Shell preview={props.heading} heading={props.heading}>

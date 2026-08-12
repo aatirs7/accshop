@@ -12,6 +12,12 @@ export interface PriceTier {
   unitPriceCents: number;
 }
 
+export interface CheckoutVariant {
+  id: string;
+  label: string;
+  priceDeltaCents: number;
+}
+
 export function CheckoutForm(props: {
   productSlug: string;
   retailUnitCents: number;
@@ -19,20 +25,31 @@ export function CheckoutForm(props: {
   prefillEmail: string | null;
   isSignedIn: boolean;
   refPartner: string | null;
+  variants: CheckoutVariant[];
+  initialVariantId: string | null;
+  discountAmountCents: number;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [method, setMethod] = useState<"stripe" | "zelle">("zelle");
+  const [variantId, setVariantId] = useState(props.initialVariantId ?? "");
+  const [discountCode, setDiscountCode] = useState("");
   const [state, action, pending] = useActionState<CheckoutResult | null, FormData>(
     startCheckout,
     null,
   );
 
-  const unitCents = useMemo(() => {
+  const baseUnit = useMemo(() => {
     const applicable = props.partnerTiers
       .filter((t) => t.minQty <= quantity)
       .sort((a, b) => b.minQty - a.minQty)[0];
     return applicable?.unitPriceCents ?? props.retailUnitCents;
   }, [quantity, props.partnerTiers, props.retailUnitCents]);
+
+  const variant = props.variants.find((v) => v.id === variantId);
+  const unitCents = baseUnit + (variant?.priceDeltaCents ?? 0);
+  const subtotal = unitCents * quantity;
+  const discountPreview = discountCode.trim() ? props.discountAmountCents : 0;
+  const totalPreview = Math.max(100, subtotal - discountPreview);
 
   const nextTier = props.partnerTiers
     .filter((t) => t.minQty > quantity)
@@ -44,6 +61,7 @@ export function CheckoutForm(props: {
       {props.refPartner && (
         <input type="hidden" name="ref" value={props.refPartner} />
       )}
+      <input type="hidden" name="variantId" value={variantId} />
 
       <div className="space-y-2">
         <Label htmlFor="quantity">Quantity</Label>
@@ -66,6 +84,39 @@ export function CheckoutForm(props: {
           </p>
         )}
       </div>
+
+      {props.variants.length > 1 && (
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium">Options</legend>
+          {props.variants.map((v) => (
+            <label
+              key={v.id}
+              className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                variantId === v.id
+                  ? "border-brand-gold/60 bg-brand-gold/5"
+                  : "border-border/60 hover:border-border"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="variantChoice"
+                  value={v.id}
+                  checked={variantId === v.id}
+                  onChange={() => setVariantId(v.id)}
+                  className="accent-[oklch(0.83_0.115_85)]"
+                />
+                {v.label}
+              </span>
+              {v.priceDeltaCents > 0 && (
+                <span className="text-brand-gold">
+                  +{formatMoney(v.priceDeltaCents)}
+                </span>
+              )}
+            </label>
+          ))}
+        </fieldset>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
@@ -127,13 +178,37 @@ export function CheckoutForm(props: {
         ))}
       </fieldset>
 
-      <div className="flex items-center justify-between border-t border-border/60 pt-4">
-        <span className="text-sm text-muted-foreground">
-          {quantity} × {formatMoney(unitCents)}
-        </span>
-        <span className="font-display text-3xl text-brand-gold">
-          {formatMoney(unitCents * quantity)}
-        </span>
+      <div className="space-y-2">
+        <Label htmlFor="discountCode">Discount code</Label>
+        <Input
+          id="discountCode"
+          name="discountCode"
+          value={discountCode}
+          onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+          placeholder="Optional"
+          className="max-w-[220px] uppercase"
+        />
+      </div>
+
+      <div className="space-y-1 border-t border-border/60 pt-4">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {quantity} × {formatMoney(unitCents)}
+          </span>
+          <span>{formatMoney(subtotal)}</span>
+        </div>
+        {discountPreview > 0 && (
+          <div className="flex items-center justify-between text-sm text-brand-gold">
+            <span>Discount (if valid)</span>
+            <span>− {formatMoney(subtotal - totalPreview)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-sm font-medium">Total</span>
+          <span className="font-display text-3xl text-brand-gold">
+            {formatMoney(totalPreview)}
+          </span>
+        </div>
       </div>
 
       {state && !state.ok && (

@@ -50,8 +50,16 @@ export default async function AccountsPage() {
                   >
                     {p.tierLabel} tier
                   </Badge>
-                  <span className="font-display text-2xl text-brand-gold">
-                    {formatMoney(p.retailPriceCents)}
+                  <span className="flex items-baseline gap-2">
+                    <span className="font-display text-2xl text-brand-gold">
+                      {formatMoney(p.retailPriceCents)}
+                    </span>
+                    {p.compareAtPriceCents &&
+                      p.compareAtPriceCents > p.retailPriceCents && (
+                        <span className="text-sm text-muted-foreground line-through">
+                          {formatMoney(p.compareAtPriceCents)}
+                        </span>
+                      )}
                   </span>
                 </div>
                 <CardTitle className="mt-3 font-display text-2xl font-medium">

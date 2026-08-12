@@ -86,6 +86,16 @@ export const claimStatus = pgEnum("claim_status", [
   "refunded",
   "denied",
 ]);
+export const stockLevel = pgEnum("stock_level", [
+  "high",
+  "low",
+  "extremely_low",
+]);
+export const submissionStatus = pgEnum("submission_status", [
+  "new",
+  "approved",
+  "rejected",
+]);
 
 // ---------------------------------------------------------------------------
 // Users + Auth.js adapter tables
@@ -157,10 +167,47 @@ export const products = pgTable("products", {
   followerMin: integer("follower_min").notNull(),
   description: text("description").notNull().default(""),
   retailPriceCents: integer("retail_price_cents").notNull(),
+  // Strikethrough "was $X" anchor price; null hides it.
+  compareAtPriceCents: integer("compare_at_price_cents"),
+  // Scarcity signal shown on the product page; manually curated, not live inventory.
+  stockLabel: stockLevel("stock_label").notNull().default("high"),
+  // Primary card image for carousels/catalog; product_images holds the gallery.
+  screenshotUrl: text("screenshot_url"),
+  featured: boolean("featured").notNull().default(false),
   sort: integer("sort").notNull().default(0),
   active: boolean("active").notNull().default(true),
   createdAt: createdAt(),
 });
+
+export const productImages = pgTable(
+  "product_images",
+  {
+    id: id(),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    sort: integer("sort").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index("product_images_product_idx").on(t.productId)],
+);
+
+export const productVariants = pgTable(
+  "product_variants",
+  {
+    id: id(),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    // Added to the resolved unit price when selected; can be 0.
+    priceDeltaCents: integer("price_delta_cents").notNull().default(0),
+    sort: integer("sort").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index("product_variants_product_idx").on(t.productId)],
+);
 
 export const suppliers = pgTable("suppliers", {
   id: id(),
@@ -228,6 +275,12 @@ export const orders = pgTable(
       .references(() => products.id),
     quantity: integer("quantity").notNull().default(1),
     unitPriceCents: integer("unit_price_cents").notNull(),
+    // Chosen variant (e.g. "Enable TikTok Shop"); label snapshotted for history.
+    variantId: text("variant_id"),
+    variantLabel: text("variant_label"),
+    // One-time email-capture discount applied at checkout.
+    discountCode: text("discount_code"),
+    discountCents: integer("discount_cents").notNull().default(0),
     totalCents: integer("total_cents").notNull(),
     paymentMethod: paymentMethod("payment_method").notNull(),
     paymentStatus: paymentStatus("payment_status").notNull().default("pending"),
@@ -386,12 +439,40 @@ export const testimonials = pgTable("testimonials", {
   id: id(),
   authorName: text("author_name").notNull(),
   authorHandle: text("author_handle"),
+  headline: text("headline"),
   content: text("content").notNull(),
   rating: integer("rating").notNull().default(5),
   source: text("source"),
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
   sort: integer("sort").notNull().default(0),
+  createdAt: createdAt(),
+});
+
+// Post-delivery testimonial requests + admin review queue. Approving copies
+// into `testimonials` (published).
+export const testimonialSubmissions = pgTable("testimonial_submissions", {
+  id: id(),
+  authorName: text("author_name").notNull(),
+  authorHandle: text("author_handle"),
+  headline: text("headline"),
+  content: text("content").notNull(),
+  rating: integer("rating").notNull().default(5),
+  orderCode: text("order_code"),
+  status: submissionStatus("status").notNull().default("new"),
+  reviewedBy: text("reviewed_by").references(() => users.id),
+  decidedAt: timestamp("decided_at", { withTimezone: true, mode: "date" }),
+  createdAt: createdAt(),
+});
+
+// Email-capture popup leads + their one-time discount codes.
+export const emailCaptures = pgTable("email_captures", {
+  id: id(),
+  email: text("email").notNull(),
+  discountCode: text("discount_code").notNull().unique(),
+  discountAmountCents: integer("discount_amount_cents").notNull().default(1000),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true, mode: "date" }),
+  source: text("source").notNull().default("popup"),
   createdAt: createdAt(),
 });
 
@@ -434,7 +515,26 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 
 export const productsRelations = relations(products, ({ many }) => ({
   orders: many(orders),
+  images: many(productImages),
+  variants: many(productVariants),
 }));
+
+export const productImagesRelations = relations(productImages, ({ one }) => ({
+  product: one(products, {
+    fields: [productImages.productId],
+    references: [products.id],
+  }),
+}));
+
+export const productVariantsRelations = relations(
+  productVariants,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [productVariants.productId],
+      references: [products.id],
+    }),
+  }),
+);
 
 export const partnersRelations = relations(partners, ({ one, many }) => ({
   user: one(users, { fields: [partners.userId], references: [users.id] }),

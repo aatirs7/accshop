@@ -24,6 +24,13 @@ const envSchema = z.object({
   ZELLE_RECIPIENT_NAME: z.string().default("ACCSHOP"),
   ZELLE_RECIPIENT_HANDLE: z.string().default("payments@accshop.example"),
   CRON_SECRET: z.string().optional(),
+  // Social-proof display knobs. The account count added on top of the REAL
+  // paid count so a new store can show a credible baseline without fabricating
+  // individual orders; set to 0 to show only real sales.
+  SOCIAL_PROOF_ACCOUNTS_BASE: z.coerce.number().int().default(0),
+  SOCIAL_PROOF_RATING: z.string().default("4.8"),
+  // Email-capture discount, in cents ($10 off by default).
+  DISCOUNT_AMOUNT_CENTS: z.coerce.number().int().default(1000),
 });
 
 export const env = envSchema.parse(process.env);

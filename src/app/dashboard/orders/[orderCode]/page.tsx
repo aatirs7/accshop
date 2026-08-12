@@ -197,6 +197,19 @@ export default async function OrderDetailPage({
             </a>
             .
           </p>
+          {order.fulfillmentStatus === "delivered" && (
+            <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4 text-center">
+              <p className="text-sm font-medium">Happy with your account?</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                A quick review helps other buyers and takes 30 seconds.
+              </p>
+              <Button asChild variant="outline" size="sm" className="mt-3">
+                <Link href={`/leave-review?order=${order.orderCode}`}>
+                  Leave a review
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

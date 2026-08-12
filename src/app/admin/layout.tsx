@@ -6,6 +6,7 @@ export const metadata = { title: "Admin" };
 const nav = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/products", label: "Products" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/partners", label: "Partners" },
   { href: "/admin/applications", label: "Applications" },

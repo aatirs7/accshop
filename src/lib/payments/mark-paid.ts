@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import {
   commissions,
   deliverables,
+  emailCaptures,
   orders,
   partners,
   payments,
@@ -90,6 +91,14 @@ export async function markOrderPaid(
           })
           .onConflictDoNothing();
       }
+    }
+
+    // Burn the one-time email-capture discount now that the order is paid.
+    if (order.discountCode) {
+      await tx
+        .update(emailCaptures)
+        .set({ redeemedAt: new Date() })
+        .where(eq(emailCaptures.discountCode, order.discountCode));
     }
 
     return { order, alreadyPaid: false };

@@ -11,6 +11,7 @@ import {
   partnerPricingRules,
   partners,
   payments,
+  productVariants,
   products,
   suppliers,
   testimonials,
@@ -42,11 +43,18 @@ async function main() {
         tierLabel: "100K",
         followerMin: 100_000,
         retailPriceCents: 55_000,
+        compareAtPriceCents: 75_000,
+        stockLabel: "extremely_low",
+        featured: true,
         description:
           "Established TikTok account with 100,000+ real followers, eligible for TikTok Shop Affiliate. Aged, warmed, and sourced for low ban risk. Delivered with full credentials, linked email, and our step-by-step warmup guide.",
         sort: 0,
       })
       .returning();
+    await db.insert(productVariants).values([
+      { productId: product.id, label: "No TikTok Shop", priceDeltaCents: 0, sort: 0 },
+      { productId: product.id, label: "Enable TikTok Shop", priceDeltaCents: 5_000, sort: 1 },
+    ]);
   }
 
   let supplier = await db.query.suppliers.findFirst({ where: eq(suppliers.name, "Primary Supplier") });

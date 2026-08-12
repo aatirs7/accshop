@@ -1,12 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { products, testimonials } from "@/lib/db/schema";
-import { formatMoney } from "@/lib/format";
+import { productImages, productVariants, products, testimonials } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { TestimonialCard } from "@/components/marketing/testimonial-card";
+import { ProductGallery } from "@/components/marketing/product-gallery";
+import { ProductBuyBox } from "@/components/marketing/product-buy-box";
 
 export default async function ProductPage({
   params,
@@ -19,11 +18,21 @@ export default async function ProductPage({
   });
   if (!product) notFound();
 
-  const quotes = await db.query.testimonials.findMany({
-    where: eq(testimonials.published, true),
-    orderBy: asc(testimonials.sort),
-    limit: 2,
-  });
+  const [images, variants, quotes] = await Promise.all([
+    db.query.productImages.findMany({
+      where: eq(productImages.productId, product.id),
+      orderBy: asc(productImages.sort),
+    }),
+    db.query.productVariants.findMany({
+      where: eq(productVariants.productId, product.id),
+      orderBy: asc(productVariants.sort),
+    }),
+    db.query.testimonials.findMany({
+      where: eq(testimonials.published, true),
+      orderBy: asc(testimonials.sort),
+      limit: 2,
+    }),
+  ]);
 
   return (
     <main className="bg-atmosphere">
@@ -39,7 +48,16 @@ export default async function ProductPage({
             <h1 className="mt-4 font-display text-4xl font-medium leading-tight sm:text-5xl">
               {product.name}
             </h1>
-            <p className="mt-6 max-w-xl leading-relaxed text-muted-foreground">
+
+            <div className="mt-6">
+              <ProductGallery
+                images={images.map((i) => ({ id: i.id, url: i.url }))}
+                tierLabel={product.tierLabel}
+                alt={product.name}
+              />
+            </div>
+
+            <p className="mt-8 max-w-xl leading-relaxed text-muted-foreground">
               {product.description}
             </p>
             <ul className="mt-8 grid gap-3 text-sm sm:grid-cols-2">
@@ -64,25 +82,17 @@ export default async function ProductPage({
             </div>
           </div>
 
-          {/* Buy box */}
-          <aside className="h-fit rounded-2xl border border-brand-gold/25 bg-card/70 p-8 lg:sticky lg:top-24">
-            <p className="text-sm text-muted-foreground">Price per account</p>
-            <p className="mt-1 font-display text-5xl text-brand-gold">
-              {formatMoney(product.retailPriceCents)}
-            </p>
-            <div className="gold-hairline my-6" />
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li>✓ Pay by card or Zelle</li>
-              <li>✓ Encrypted delivery via your dashboard</li>
-              <li>✓ Warranty countdown tracked per order</li>
-            </ul>
-            <Button asChild size="lg" className="mt-8 w-full">
-              <Link href={`/checkout/${product.slug}`}>Buy now</Link>
-            </Button>
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              Ordering 10+? <Link href="/bulk" className="underline">Get bulk pricing</Link>
-            </p>
-          </aside>
+          <ProductBuyBox
+            slug={product.slug}
+            basePriceCents={product.retailPriceCents}
+            compareAtPriceCents={product.compareAtPriceCents}
+            stockLabel={product.stockLabel}
+            variants={variants.map((v) => ({
+              id: v.id,
+              label: v.label,
+              priceDeltaCents: v.priceDeltaCents,
+            }))}
+          />
         </div>
       </div>
     </main>

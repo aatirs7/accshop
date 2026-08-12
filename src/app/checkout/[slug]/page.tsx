@@ -2,8 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { partnerPricingRules, partners, products } from "@/lib/db/schema";
+import {
+  partnerPricingRules,
+  partners,
+  productVariants,
+  products,
+} from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm, type PriceTier } from "@/components/checkout/checkout-form";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +21,18 @@ export default async function CheckoutPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; variant?: string }>;
 }) {
-  const [{ slug }, { ref }] = await Promise.all([params, searchParams]);
+  const [{ slug }, { ref, variant }] = await Promise.all([params, searchParams]);
   const product = await db.query.products.findFirst({
     where: and(eq(products.slug, slug), eq(products.active, true)),
   });
   if (!product) notFound();
+
+  const variants = await db.query.productVariants.findMany({
+    where: eq(productVariants.productId, product.id),
+    orderBy: asc(productVariants.sort),
+  });
 
   const session = await auth();
   let partnerTiers: PriceTier[] = [];
@@ -84,6 +95,17 @@ export default async function CheckoutPage({
             prefillEmail={session?.user?.email ?? null}
             isSignedIn={Boolean(session?.user)}
             refPartner={ref ?? null}
+            variants={variants.map((v) => ({
+              id: v.id,
+              label: v.label,
+              priceDeltaCents: v.priceDeltaCents,
+            }))}
+            initialVariantId={
+              variants.find((v) => v.id === variant)?.id ??
+              variants[0]?.id ??
+              null
+            }
+            discountAmountCents={env.DISCOUNT_AMOUNT_CENTS}
           />
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">

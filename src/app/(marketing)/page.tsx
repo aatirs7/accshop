@@ -1,24 +1,34 @@
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, testimonials } from "@/lib/db/schema";
 import { formatMoney } from "@/lib/format";
+import { socialProof } from "@/lib/db/queries/public";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TestimonialCard } from "@/components/marketing/testimonial-card";
 import { ProcessSteps } from "@/components/marketing/process-steps";
+import { StatPills } from "@/components/marketing/stat-pills";
+import { BenefitGrid } from "@/components/marketing/benefit-grid";
+import { GuaranteeBanner } from "@/components/marketing/guarantee-banner";
+import { FeaturedCarousel } from "@/components/marketing/featured-carousel";
+import { TestimonialsCarousel } from "@/components/marketing/testimonials-carousel";
 
 export default async function HomePage() {
-  const [catalog, featured] = await Promise.all([
+  const [catalog, featuredProducts, featured, proof] = await Promise.all([
     db.query.products.findMany({
       where: eq(products.active, true),
+      orderBy: asc(products.sort),
+    }),
+    db.query.products.findMany({
+      where: and(eq(products.active, true), eq(products.featured, true)),
       orderBy: asc(products.sort),
     }),
     db.query.testimonials.findMany({
       where: eq(testimonials.published, true),
       orderBy: asc(testimonials.sort),
-      limit: 3,
+      limit: 8,
     }),
+    socialProof(),
   ]);
   const flagship = catalog[0];
 
@@ -55,8 +65,12 @@ export default async function HomePage() {
               <Link href="/partners">Buying for your students?</Link>
             </Button>
           </div>
+          {/* Trust-stat pills */}
+          <div className="mt-10">
+            <StatPills accountsSold={proof.accountsSold} rating={proof.rating} />
+          </div>
           {/* Trust bar */}
-          <dl className="mt-16 grid w-full max-w-2xl grid-cols-3 gap-6 border-t border-border/60 pt-8">
+          <dl className="mt-14 grid w-full max-w-2xl grid-cols-3 gap-6 border-t border-border/60 pt-8">
             {[
               ["100K+", "followers per account"],
               ["30-day", "replacement warranty"],
@@ -77,27 +91,47 @@ export default async function HomePage() {
 
       <div className="gold-hairline mx-auto max-w-6xl" />
 
-      {/* Testimonials front and center */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="text-center">
-          <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">
-            Social proof
-          </p>
-          <h2 className="mt-2 font-display text-3xl font-medium sm:text-4xl">
-            Buyers who came back
-          </h2>
-        </div>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {featured.map((t) => (
-            <TestimonialCard key={t.id} t={t} />
-          ))}
-        </div>
-        <div className="mt-10 text-center">
-          <Button asChild variant="outline">
-            <Link href="/testimonials">Read all testimonials →</Link>
-          </Button>
-        </div>
-      </section>
+      {/* Featured accounts carousel */}
+      {featuredProducts.length > 0 && (
+        <FeaturedCarousel
+          products={featuredProducts.map((p) => ({
+            id: p.id,
+            slug: p.slug,
+            name: p.name,
+            tierLabel: p.tierLabel,
+            description: p.description,
+            retailPriceCents: p.retailPriceCents,
+            compareAtPriceCents: p.compareAtPriceCents,
+            screenshotUrl: p.screenshotUrl,
+          }))}
+          rating={proof.rating}
+        />
+      )}
+
+      {/* Account benefits */}
+      <BenefitGrid />
+
+      {/* Risk-free guarantee */}
+      <GuaranteeBanner />
+
+      {/* Testimonials carousel */}
+      {featured.length > 0 && (
+        <TestimonialsCarousel
+          testimonials={featured.map((t) => ({
+            id: t.id,
+            authorName: t.authorName,
+            authorHandle: t.authorHandle,
+            headline: t.headline,
+            content: t.content,
+            rating: t.rating,
+          }))}
+        />
+      )}
+      <div className="mb-4 text-center">
+        <Button asChild variant="outline">
+          <Link href="/testimonials">Read all testimonials →</Link>
+        </Button>
+      </div>
 
       {/* Process */}
       <section className="border-y border-border/60 bg-brand-raised/40">

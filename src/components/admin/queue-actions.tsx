@@ -12,7 +12,12 @@ import {
   updatePartnerSettings,
 } from "@/actions/admin/partners";
 import { resolveClaim } from "@/actions/admin/claims";
-import { createSupplier, createTestimonial } from "@/actions/admin/catalog";
+import {
+  approveSubmission,
+  createSupplier,
+  createTestimonial,
+  rejectSubmission,
+} from "@/actions/admin/catalog";
 import type { ActionResult } from "@/actions/admin/orders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -251,6 +256,34 @@ export function PartnerSettingsControls(props: {
         }}
       >
         Settle commissions
+      </Button>
+    </div>
+  );
+}
+
+export function SubmissionActions({ submissionId }: { submissionId: string }) {
+  const { pending, run } = useRun();
+  return (
+    <div className="flex gap-2">
+      <Button
+        size="sm"
+        disabled={pending}
+        onClick={() =>
+          run(() => approveSubmission(submissionId), "Published")
+        }
+      >
+        Approve &amp; publish
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={pending}
+        onClick={() => {
+          if (!window.confirm("Reject this submission?")) return;
+          run(() => rejectSubmission(submissionId), "Rejected");
+        }}
+      >
+        Reject
       </Button>
     </div>
   );
