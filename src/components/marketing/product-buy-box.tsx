@@ -19,7 +19,7 @@ const STOCK: Record<
   high: { label: "In stock", pct: 72, tone: "bg-brand-success" },
   low: { label: "Low stock", pct: 34, tone: "bg-brand-warning" },
   extremely_low: {
-    label: "Extremely Low — few left",
+    label: "Extremely Low, few left",
     pct: 12,
     tone: "bg-destructive",
   },
