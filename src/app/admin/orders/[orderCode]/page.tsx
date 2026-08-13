@@ -5,11 +5,12 @@ import { db } from "@/lib/db";
 import { deliverables as deliverablesTable, orders, suppliers } from "@/lib/db/schema";
 import { formatDate, formatMoney } from "@/lib/format";
 import { nextFulfillmentStatus, pipelineStage } from "@/lib/orders/status";
-import { markZellePaid, unlockReveal } from "@/actions/admin/orders";
 import {
-  emailAccountToCustomer,
-  revokeCredentials,
-} from "@/actions/admin/credentials";
+  markOrderDelivered,
+  markZellePaid,
+  unlockReveal,
+} from "@/actions/admin/orders";
+import { revokeCredentials } from "@/actions/admin/credentials";
 import {
   ActionButton,
   PromptActionButton,
@@ -167,16 +168,17 @@ export default async function AdminOrderDetailPage({
               label={STAGE_LABELS[next as keyof typeof STAGE_LABELS] ?? next}
             />
           )}
-          {order.paymentStatus === "paid" && (
-            <ActionButton
-              action={emailAccountToCustomer.bind(null, order.id)}
-              variant="default"
-              confirmText="Email the account login details to the customer and mark the order delivered?"
-              successText="Account emailed to customer"
-            >
-              Email account to customer
-            </ActionButton>
-          )}
+          {order.paymentStatus === "paid" &&
+            order.fulfillmentStatus !== "delivered" && (
+              <ActionButton
+                action={markOrderDelivered.bind(null, order.id)}
+                variant="default"
+                confirmText="Mark this order delivered? Do this once you've emailed the customer their account. It starts the 14-day warranty and shows as fulfilled to any referring affiliate/coach."
+                successText="Marked delivered"
+              >
+                Mark delivered (I emailed the account)
+              </ActionButton>
+            )}
           {order.paymentStatus === "paid" && !next && (
             <p className="text-sm text-muted-foreground">
               Order fully delivered

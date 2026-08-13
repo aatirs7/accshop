@@ -22,6 +22,51 @@ import { audit } from "@/lib/audit";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * Mark a paid order delivered for the manual-fulfillment flow: the owner has
+ * emailed the account themselves, so this just flips fulfillment to delivered
+ * (starting the warranty) without requiring credentials attached on-site.
+ */
+export async function markOrderDelivered(
+  orderId: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+  });
+  if (!order) return { ok: false, error: "Order not found." };
+  if (order.paymentStatus !== "paid") {
+    return { ok: false, error: "Order isn't paid yet." };
+  }
+  const now = new Date();
+  await db
+    .update(deliverables)
+    .set({ status: "delivered", deliveredAt: now })
+    .where(
+      and(
+        eq(deliverables.orderId, orderId),
+        eq(deliverables.status, "pending"),
+      ),
+    );
+  await db
+    .update(orders)
+    .set({
+      fulfillmentStatus: "delivered",
+      deliveredAt: order.deliveredAt ?? now,
+    })
+    .where(eq(orders.id, orderId));
+  await audit({
+    actorUserId: admin.id,
+    action: "order.marked_delivered_manual",
+    entityType: "order",
+    entityId: orderId,
+    metadata: { orderCode: order.orderCode },
+  });
+  revalidatePath(`/admin/orders/${order.orderCode}`);
+  revalidatePath("/admin/orders");
+  return { ok: true };
+}
+
 /** Manual Zelle confirmation, converges on the same path as the Stripe webhook. */
 export async function markZellePaid(
   orderId: string,
