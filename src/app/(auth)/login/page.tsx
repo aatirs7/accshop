@@ -71,6 +71,12 @@ export default async function LoginPage({
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Use the same email you checked out with to see your orders.
           </p>
+          <p className="mt-3 text-center text-sm text-muted-foreground">
+            Staff?{" "}
+            <Link href="/admin-login" className="text-brand-gold underline">
+              Sign in with a password
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </main>
