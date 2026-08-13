@@ -110,6 +110,9 @@ export const users = pgTable("users", {
     mode: "date",
   }),
   image: text("image"),
+  // Optional scrypt hash for email+password login (admins). Magic-link users
+  // have this null and sign in without a password.
+  passwordHash: text("password_hash"),
   role: userRole("role").notNull().default("customer"),
   createdAt: createdAt(),
 });
