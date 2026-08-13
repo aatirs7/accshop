@@ -45,10 +45,10 @@ export default async function LoginPage({
           >
             ACCSHOP
           </Link>
-          <CardTitle className="mt-4 text-2xl">Sign in</CardTitle>
+          <CardTitle className="mt-4 text-2xl">Partner &amp; coach sign-in</CardTitle>
           <CardDescription>
-            Enter your email and we&apos;ll send you a secure one-time sign-in
-            link. No password needed.
+            For approved coaches and partners. Enter your email and we&apos;ll
+            send a secure one-time sign-in link, no password needed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,8 +68,15 @@ export default async function LoginPage({
               Send sign-in link
             </Button>
           </form>
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Use the same email you checked out with to see your orders.
+          <div className="mt-6 rounded-lg border border-border/60 bg-brand-raised/40 p-3 text-center text-xs text-muted-foreground">
+            Just placed an order? You don&apos;t need to sign in, we email you
+            order updates and next steps directly.
+          </div>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Not a partner yet?{" "}
+            <Link href="/partners" className="text-brand-gold underline">
+              Apply here
+            </Link>
           </p>
           <p className="mt-3 text-center text-sm text-muted-foreground">
             Staff?{" "}
