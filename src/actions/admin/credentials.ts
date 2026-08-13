@@ -4,15 +4,104 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { credentials, deliverables } from "@/lib/db/schema";
+import { credentials, deliverables, orders } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import {
   credentialFingerprint,
+  decryptCredential,
   encryptCredential,
   type CredentialPayload,
 } from "@/lib/crypto/credentials";
+import { env } from "@/lib/env";
+import { sendEmail } from "@/lib/email/resend";
+import { AccountDeliveryEmail } from "@/lib/email/templates";
 import { audit } from "@/lib/audit";
 import type { ActionResult } from "./orders";
+
+/**
+ * Emails the buyer their account login details for an order, then marks the
+ * order delivered. This is how retail customers receive their accounts (they
+ * don't sign in). Requires every account to have credentials attached.
+ */
+export async function emailAccountToCustomer(
+  orderId: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    with: {
+      user: true,
+      deliverables: { with: { credential: true } },
+    },
+  });
+  if (!order) return { ok: false, error: "Order not found." };
+  if (order.paymentStatus !== "paid") {
+    return { ok: false, error: "Order isn't paid yet." };
+  }
+  const active = order.deliverables.filter((d) => d.status !== "replaced");
+  if (active.length === 0 || active.some((d) => !d.credential)) {
+    return {
+      ok: false,
+      error: "Attach credentials to every account before emailing.",
+    };
+  }
+
+  const accounts = active.map((d) => {
+    const payload = decryptCredential(
+      {
+        ciphertext: d.credential!.ciphertext,
+        iv: d.credential!.iv,
+        authTag: d.credential!.authTag,
+        keyVersion: d.credential!.keyVersion,
+      },
+      d.id,
+    );
+    return { fields: payload.fields, notes: payload.notes };
+  });
+
+  await sendEmail({
+    to: order.user.email,
+    subject: `Your account is ready — ${order.orderCode}`,
+    react: AccountDeliveryEmail({
+      orderCode: order.orderCode,
+      accounts,
+      supportEmail: env.SUPPORT_EMAIL,
+    }),
+    text:
+      `Your account for order ${order.orderCode} is ready:\n\n` +
+      accounts
+        .map(
+          (a, i) =>
+            `${accounts.length > 1 ? `Account ${i + 1}\n` : ""}` +
+            a.fields.map((f) => `${f.label}: ${f.value}`).join("\n"),
+        )
+        .join("\n\n") +
+      `\n\nQuestions? ${env.SUPPORT_EMAIL}`,
+  });
+
+  const now = new Date();
+  await db
+    .update(deliverables)
+    .set({ status: "delivered", deliveredAt: now })
+    .where(eq(deliverables.orderId, orderId));
+  await db
+    .update(orders)
+    .set({
+      fulfillmentStatus: "delivered",
+      deliveredAt: order.deliveredAt ?? now,
+    })
+    .where(eq(orders.id, orderId));
+
+  await audit({
+    actorUserId: admin.id,
+    action: "order.account_emailed",
+    entityType: "order",
+    entityId: orderId,
+    metadata: { orderCode: order.orderCode },
+  });
+  revalidatePath(`/admin/orders/${order.orderCode}`);
+  return { ok: true };
+}
 
 const attachSchema = z.object({
   deliverableId: z.string().min(1),

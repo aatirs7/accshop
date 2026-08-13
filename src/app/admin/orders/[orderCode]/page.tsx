@@ -6,7 +6,10 @@ import { deliverables as deliverablesTable, orders, suppliers } from "@/lib/db/s
 import { formatDate, formatMoney } from "@/lib/format";
 import { nextFulfillmentStatus, pipelineStage } from "@/lib/orders/status";
 import { markZellePaid, unlockReveal } from "@/actions/admin/orders";
-import { revokeCredentials } from "@/actions/admin/credentials";
+import {
+  emailAccountToCustomer,
+  revokeCredentials,
+} from "@/actions/admin/credentials";
 import {
   ActionButton,
   PromptActionButton,
@@ -164,15 +167,20 @@ export default async function AdminOrderDetailPage({
               label={STAGE_LABELS[next as keyof typeof STAGE_LABELS] ?? next}
             />
           )}
+          {order.paymentStatus === "paid" && (
+            <ActionButton
+              action={emailAccountToCustomer.bind(null, order.id)}
+              variant="default"
+              confirmText="Email the account login details to the customer and mark the order delivered?"
+              successText="Account emailed to customer"
+            >
+              Email account to customer
+            </ActionButton>
+          )}
           {order.paymentStatus === "paid" && !next && (
             <p className="text-sm text-muted-foreground">
               Order fully delivered
               {order.deliveredAt ? ` on ${formatDate(order.deliveredAt)}` : ""}.
-            </p>
-          )}
-          {order.paymentStatus === "pending" && order.paymentMethod === "stripe" && (
-            <p className="text-sm text-muted-foreground">
-              Awaiting Stripe payment, confirmed automatically by webhook.
             </p>
           )}
         </CardContent>

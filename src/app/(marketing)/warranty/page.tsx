@@ -6,7 +6,7 @@ export const metadata = { title: "Warranty policy" };
 const sections = [
   {
     title: "What's covered",
-    body: "Every account purchased from ACCSHOP is covered by a 30-day replacement warranty starting the day your credentials are delivered. If your account is banned, restricted from TikTok Shop Affiliate, or its follower count was materially misrepresented, we replace it free of charge.",
+    body: "Every account purchased from ACCSHOP is covered by a 14-day replacement warranty starting the day your credentials are delivered. If your account is banned, restricted from TikTok Shop Affiliate, or its follower count was materially misrepresented, we replace it free of charge.",
   },
   {
     title: "What's not covered",
@@ -31,7 +31,7 @@ export default function WarrantyPage() {
             Policy
           </p>
           <h1 className="mt-2 font-display text-4xl font-medium sm:text-5xl">
-            30-day warranty, in plain words
+            14-day warranty, in plain words
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground text-balance">
             One month of full coverage from the moment of delivery. Here&apos;s

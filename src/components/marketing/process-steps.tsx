@@ -16,7 +16,7 @@ const steps = [
   },
   {
     n: "04",
-    title: "30-day warranty",
+    title: "14-day warranty",
     body: "Every account is covered for a full month from delivery. Problem? We replace it.",
   },
 ];

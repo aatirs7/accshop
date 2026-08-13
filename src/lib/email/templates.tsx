@@ -189,7 +189,7 @@ export function CredentialsReadyEmail(props: {
         </Button>
       </Section>
       <Text style={styles.text}>
-        Your 30-day warranty starts now. Follow the included warmup guide
+        Your 14-day warranty starts now. Follow the included warmup guide
         before posting.
       </Text>
     </Shell>
@@ -243,6 +243,57 @@ export function WelcomeDiscountEmail(props: {
           Browse accounts
         </Button>
       </Section>
+    </Shell>
+  );
+}
+
+export function AccountDeliveryEmail(props: {
+  orderCode: string;
+  accounts: { fields: { label: string; value: string }[]; notes?: string }[];
+  supportEmail: string;
+}) {
+  return (
+    <Shell
+      preview="Your TikTok account is ready"
+      heading="Your account is ready 🎉"
+    >
+      <Text style={styles.text}>
+        Here are the login details for order{" "}
+        <strong>{props.orderCode}</strong>. Change the password and recovery
+        email right away, and follow your warmup guide before posting.
+      </Text>
+      {props.accounts.map((acc, i) => (
+        <Section
+          key={i}
+          style={{
+            margin: "16px 0",
+            padding: "16px",
+            border: "1px solid #2a2b38",
+            borderRadius: "8px",
+          }}
+        >
+          {props.accounts.length > 1 && (
+            <Text style={{ ...styles.text, fontWeight: 700, margin: "0 0 8px" }}>
+              Account {i + 1}
+            </Text>
+          )}
+          {acc.fields.map((f) => (
+            <Text key={f.label} style={{ ...styles.text, margin: "2px 0" }}>
+              {f.label}: <strong style={{ color: "#f4f4f0" }}>{f.value}</strong>
+            </Text>
+          ))}
+          {acc.notes ? (
+            <Text style={{ ...styles.footer, margin: "8px 0 0" }}>{acc.notes}</Text>
+          ) : null}
+        </Section>
+      ))}
+      <Text style={styles.text}>
+        Your 14-day replacement warranty starts now. Questions? Email{" "}
+        <a href={`mailto:${props.supportEmail}`} style={{ color: "#e5c56b" }}>
+          {props.supportEmail}
+        </a>
+        .
+      </Text>
     </Shell>
   );
 }

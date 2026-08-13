@@ -32,13 +32,7 @@ export default async function DashboardLayout({
               href="/dashboard"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              My orders
-            </Link>
-            <Link
-              href="/accounts"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Buy more
+              Referrals
             </Link>
           </div>
           <div className="flex items-center gap-4">

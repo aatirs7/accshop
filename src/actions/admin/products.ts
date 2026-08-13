@@ -4,10 +4,65 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { productImages, productVariants, products } from "@/lib/db/schema";
+import {
+  productImages,
+  productVariants,
+  products,
+  uploads,
+} from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { audit } from "@/lib/audit";
 import type { ActionResult } from "./orders";
+
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Upload a product image from a file (phone camera roll / photo picker).
+ * Stored in the DB and served via /api/uploads/[id]; attached as a gallery
+ * image on the product.
+ */
+export async function uploadProductImage(
+  formData: FormData,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const productId = String(formData.get("productId") ?? "");
+  const file = formData.get("file");
+  if (!productId || !(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Choose an image to upload." };
+  }
+  if (!file.type.startsWith("image/")) {
+    return { ok: false, error: "That file isn't an image." };
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { ok: false, error: "Image is too large (max 8MB)." };
+  }
+
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const [upload] = await db
+    .insert(uploads)
+    .values({ data: bytes, contentType: file.type, createdBy: admin.id })
+    .returning();
+
+  const count = await db.query.productImages.findMany({
+    where: eq(productImages.productId, productId),
+  });
+  await db.insert(productImages).values({
+    productId,
+    url: `/api/uploads/${upload.id}`,
+    sort: count.length,
+  });
+
+  await audit({
+    actorUserId: admin.id,
+    action: "product.image_uploaded",
+    entityType: "product",
+    entityId: productId,
+  });
+  revalidatePath("/admin/products");
+  revalidatePath("/accounts");
+  revalidatePath("/");
+  return { ok: true };
+}
 
 const dollarsToCents = (v: string | null | undefined) =>
   v && v.trim() ? Math.round(parseFloat(v) * 100) : null;

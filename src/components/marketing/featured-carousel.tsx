@@ -18,10 +18,8 @@ export interface FeaturedProduct {
 
 export function FeaturedCarousel({
   products,
-  rating,
 }: {
   products: FeaturedProduct[];
-  rating: string;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -86,9 +84,6 @@ export function FeaturedCarousel({
                   </span>
                 </div>
               )}
-              <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/85 px-2.5 py-1 text-xs font-medium text-brand-gold backdrop-blur">
-                ★ {rating}
-              </span>
             </div>
             <div className="p-5">
               <h3 className="font-display text-lg font-semibold">{p.name}</h3>

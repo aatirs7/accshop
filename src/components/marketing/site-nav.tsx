@@ -6,6 +6,7 @@ const links = [
   { href: "/accounts", label: "Accounts" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/partners", label: "Partners" },
+  { href: "/affiliates", label: "Affiliates" },
   { href: "/warranty", label: "Warranty" },
   { href: "/contact", label: "Contact" },
 ];
@@ -46,7 +47,7 @@ export async function SiteNav() {
             </>
           ) : (
             <Button asChild variant="ghost" size="sm">
-              <Link href="/login">Partner login</Link>
+              <Link href="/portal/login">Affiliate login</Link>
             </Button>
           )}
           <Button asChild size="sm">

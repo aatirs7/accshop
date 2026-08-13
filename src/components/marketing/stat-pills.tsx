@@ -1,14 +1,8 @@
-export function StatPills({
-  accountsSold,
-  rating,
-}: {
-  accountsSold: number;
-  rating: string;
-}) {
+export function StatPills({ accountsSold }: { accountsSold: number }) {
   const pills = [
-    { label: `${accountsSold.toLocaleString()}+ sold`, icon: "✦" },
-    { label: `${rating} rating`, icon: "★" },
-    { label: "30-day warranty", icon: "✓" },
+    { label: `${accountsSold.toLocaleString()} sold`, icon: "✦" },
+    { label: "100% organic followers", icon: "★" },
+    { label: "14-day warranty", icon: "✓" },
   ];
   return (
     <div className="flex flex-wrap justify-center gap-3">

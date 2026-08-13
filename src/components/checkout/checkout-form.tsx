@@ -27,12 +27,10 @@ export function CheckoutForm(props: {
   refPartner: string | null;
   variants: CheckoutVariant[];
   initialVariantId: string | null;
-  discountAmountCents: number;
+  initialReferralCode: string | null;
 }) {
   const [quantity, setQuantity] = useState(1);
-  const [method, setMethod] = useState<"stripe" | "zelle">("zelle");
   const [variantId, setVariantId] = useState(props.initialVariantId ?? "");
-  const [discountCode, setDiscountCode] = useState("");
   const [state, action, pending] = useActionState<CheckoutResult | null, FormData>(
     startCheckout,
     null,
@@ -48,8 +46,6 @@ export function CheckoutForm(props: {
   const variant = props.variants.find((v) => v.id === variantId);
   const unitCents = baseUnit + (variant?.priceDeltaCents ?? 0);
   const subtotal = unitCents * quantity;
-  const discountPreview = discountCode.trim() ? props.discountAmountCents : 0;
-  const totalPreview = Math.max(100, subtotal - discountPreview);
 
   const nextTier = props.partnerTiers
     .filter((t) => t.minQty > quantity)
@@ -62,6 +58,8 @@ export function CheckoutForm(props: {
         <input type="hidden" name="ref" value={props.refPartner} />
       )}
       <input type="hidden" name="variantId" value={variantId} />
+      {/* Zelle is the only rail for now. */}
+      <input type="hidden" name="method" value="zelle" />
 
       <div className="space-y-2">
         <Label htmlFor="quantity">Quantity</Label>
@@ -131,84 +129,36 @@ export function CheckoutForm(props: {
           className={props.isSignedIn ? "opacity-70" : ""}
         />
         <p className="text-xs text-muted-foreground">
-          Your credentials are delivered to a secure dashboard tied to this
-          email, double-check it.
+          We email your account details and updates here, double-check it.
         </p>
       </div>
 
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-medium">Payment method</legend>
-        {(
-          [
-            {
-              id: "zelle",
-              title: "Zelle",
-              desc: "No fees. We confirm your transfer manually, usually within a few hours.",
-            },
-            {
-              id: "stripe",
-              title: "Card",
-              desc: "Instant confirmation via secure card checkout.",
-            },
-          ] as const
-        ).map((m) => (
-          <label
-            key={m.id}
-            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-              method === m.id
-                ? "border-brand-gold/60 bg-brand-gold/5"
-                : "border-border/60 hover:border-border"
-            }`}
-          >
-            <input
-              type="radio"
-              name="method"
-              value={m.id}
-              checked={method === m.id}
-              onChange={() => setMethod(m.id)}
-              className="mt-1 accent-[oklch(0.83_0.115_85)]"
-            />
-            <span>
-              <span className="block text-sm font-semibold">{m.title}</span>
-              <span className="block text-xs text-muted-foreground">
-                {m.desc}
-              </span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
       <div className="space-y-2">
-        <Label htmlFor="discountCode">Discount code</Label>
+        <Label htmlFor="referralCode">Referral code (optional)</Label>
         <Input
-          id="discountCode"
-          name="discountCode"
-          value={discountCode}
-          onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-          placeholder="Optional"
-          className="max-w-[220px] uppercase"
+          id="referralCode"
+          name="referralCode"
+          defaultValue={props.initialReferralCode ?? ""}
+          placeholder="Have a code? Enter it here"
+          className="max-w-[260px] uppercase"
         />
       </div>
 
-      <div className="space-y-1 border-t border-border/60 pt-4">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {quantity} × {formatMoney(unitCents)}
-          </span>
-          <span>{formatMoney(subtotal)}</span>
-        </div>
-        {discountPreview > 0 && (
-          <div className="flex items-center justify-between text-sm text-brand-gold">
-            <span>Discount (if valid)</span>
-            <span>− {formatMoney(subtotal - totalPreview)}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-sm font-medium">Total</span>
-          <span className="font-display text-3xl text-brand-gold">
-            {formatMoney(totalPreview)}
-          </span>
-        </div>
+      <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4">
+        <p className="text-sm font-medium">Payment: Zelle</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          After you place the order we&apos;ll show you the Zelle details and a
+          code to include, no fees, confirmed within a few hours.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border/60 pt-4">
+        <span className="text-sm text-muted-foreground">
+          {quantity} × {formatMoney(unitCents)}
+        </span>
+        <span className="font-display text-3xl text-brand-gold">
+          {formatMoney(subtotal)}
+        </span>
       </div>
 
       {state && !state.ok && (
@@ -216,11 +166,7 @@ export function CheckoutForm(props: {
       )}
 
       <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending
-          ? "Preparing your order…"
-          : method === "zelle"
-            ? "Place order, get Zelle instructions"
-            : "Continue to secure card payment"}
+        {pending ? "Preparing your order…" : "Place order — get Zelle details"}
       </Button>
     </form>
   );

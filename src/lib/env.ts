@@ -23,6 +23,8 @@ const envSchema = z.object({
   APP_URL: z.string().default("http://localhost:3000"),
   ZELLE_RECIPIENT_NAME: z.string().default("ACCSHOP"),
   ZELLE_RECIPIENT_HANDLE: z.string().default("payments@accshop.example"),
+  // Support address shown to buyers post-purchase and in emails.
+  SUPPORT_EMAIL: z.string().default("aashirsiddiqui13@gmail.com"),
   CRON_SECRET: z.string().optional(),
   // Social-proof display knobs. The account count added on top of the REAL
   // paid count so a new store can show a credible baseline without fabricating

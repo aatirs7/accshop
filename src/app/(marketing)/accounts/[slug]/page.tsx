@@ -67,7 +67,7 @@ export default async function ProductPage({
                 "Aged & warmed before sale",
                 "Full credentials + linked email",
                 "Step-by-step warmup guide",
-                "30-day replacement warranty",
+                "14-day replacement warranty",
               ].map((f) => (
                 <li key={f} className="flex gap-2">
                   <span className="text-brand-gold">✦</span>

@@ -1,4 +1,4 @@
-export const WARRANTY_DAYS = 30;
+export const WARRANTY_DAYS = 14;
 /** Reveals stay available this long past warranty expiry, then can be revoked. */
 export const REVEAL_GRACE_DAYS = 7;
 

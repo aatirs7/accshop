@@ -16,6 +16,8 @@ import { requireAdmin } from "@/lib/auth-helpers";
 import { env } from "@/lib/env";
 import { sendEmail } from "@/lib/email/resend";
 import { AdminNotifyEmail } from "@/lib/email/templates";
+import { generateReferralCode } from "@/lib/session";
+import { hashPassword } from "@/lib/password";
 import { audit } from "@/lib/audit";
 import type { ActionResult } from "./orders";
 
@@ -54,9 +56,15 @@ export async function approveApplication(
       userId: user.id,
       businessName: app.tiktokHandle,
       commissionRateBps,
+      referralCode: generateReferralCode(),
       approvedAt: new Date(),
       notes: `Approved from application. Est. weekly volume: ${app.estWeeklyVolume ?? "n/a"}`,
     });
+  } else if (!existingPartner.referralCode) {
+    await db
+      .update(partners)
+      .set({ referralCode: generateReferralCode() })
+      .where(eq(partners.id, existingPartner.id));
   }
 
   await db
@@ -89,6 +97,35 @@ export async function approveApplication(
 
   revalidatePath("/admin/applications");
   revalidatePath("/admin/partners");
+  return { ok: true };
+}
+
+/**
+ * Set (or reset) a coach's login password so they can access their referral
+ * dashboard. The owner shares the chosen password with the coach.
+ */
+export async function setPartnerPassword(
+  partnerId: string,
+  password: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (password.length < 6) {
+    return { ok: false, error: "Use at least 6 characters." };
+  }
+  const partner = await db.query.partners.findFirst({
+    where: eq(partners.id, partnerId),
+  });
+  if (!partner) return { ok: false, error: "Partner not found." };
+  await db
+    .update(users)
+    .set({ passwordHash: hashPassword(password) })
+    .where(eq(users.id, partner.userId));
+  await audit({
+    actorUserId: admin.id,
+    action: "partner.password_set",
+    entityType: "partner",
+    entityId: partnerId,
+  });
   return { ok: true };
 }
 

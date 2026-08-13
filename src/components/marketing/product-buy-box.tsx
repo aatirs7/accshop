@@ -109,19 +109,25 @@ export function ProductBuyBox({
         </fieldset>
       )}
 
-      <div className="gold-hairline my-6" />
-      <ul className="space-y-3 text-sm text-muted-foreground">
-        <li>✓ Pay by card or Zelle</li>
-        <li>✓ Encrypted delivery via your dashboard</li>
-        <li>✓ Warranty countdown tracked per order</li>
-      </ul>
-      <Button asChild size="lg" className="mt-8 w-full">
-        <Link href={checkoutHref}>Add to cart</Link>
+      {/* Primary action, kept high in the buy box */}
+      <Button
+        asChild
+        size="lg"
+        className="mt-6 h-14 w-full rounded-full text-base font-semibold shadow-lg shadow-brand-gold/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-gold/30"
+      >
+        <Link href={checkoutHref}>Buy an account</Link>
       </Button>
       <div className="mt-6">
         <TrustIcons />
       </div>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
+
+      <div className="gold-hairline my-6" />
+      <ul className="space-y-3 text-sm text-muted-foreground">
+        <li>✓ Pay securely by Zelle</li>
+        <li>✓ Account details emailed to you after payment</li>
+        <li>✓ 14-day replacement warranty</li>
+      </ul>
+      <p className="mt-6 text-center text-xs text-muted-foreground">
         Ordering 10+?{" "}
         <Link href="/bulk" className="underline">
           Get bulk pricing

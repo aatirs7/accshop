@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  affiliateCommissions,
+  affiliates,
   commissions,
   deliverables,
   emailCaptures,
@@ -87,6 +89,25 @@ export async function markOrderPaid(
             orderId,
             amountCents: Math.round(
               (order.totalCents * partner.commissionRateBps) / 10_000,
+            ),
+          })
+          .onConflictDoNothing();
+      }
+    }
+
+    // Affiliate commission (self-serve referral): accrue at the affiliate's rate.
+    if (order.affiliateId) {
+      const affiliate = await tx.query.affiliates.findFirst({
+        where: eq(affiliates.id, order.affiliateId),
+      });
+      if (affiliate) {
+        await tx
+          .insert(affiliateCommissions)
+          .values({
+            affiliateId: affiliate.id,
+            orderId,
+            amountCents: Math.round(
+              (order.totalCents * affiliate.commissionRateBps) / 10_000,
             ),
           })
           .onConflictDoNothing();

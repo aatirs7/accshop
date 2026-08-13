@@ -4,9 +4,9 @@ import { orders } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 
 /**
- * Public-facing social proof. `accountsSold` is the REAL count of accounts in
- * paid orders plus an optional configured baseline (SOCIAL_PROOF_ACCOUNTS_BASE)
- * so a fresh store shows a credible number without fabricating orders.
+ * Public-facing social proof. When SOCIAL_PROOF_ACCOUNTS_BASE is set it is the
+ * displayed "sold" figure (a curated baseline for a young store); otherwise we
+ * show the real count of accounts in paid orders.
  */
 export async function socialProof() {
   const [row] = await db
@@ -16,8 +16,9 @@ export async function socialProof() {
     .from(orders)
     .where(eq(orders.paymentStatus, "paid"));
 
-  return {
-    accountsSold: Number(row.accountsSold) + env.SOCIAL_PROOF_ACCOUNTS_BASE,
-    rating: env.SOCIAL_PROOF_RATING,
-  };
+  const real = Number(row.accountsSold);
+  const accountsSold =
+    env.SOCIAL_PROOF_ACCOUNTS_BASE > 0 ? env.SOCIAL_PROOF_ACCOUNTS_BASE : real;
+
+  return { accountsSold };
 }

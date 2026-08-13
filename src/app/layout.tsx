@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | ACCSHOP",
   },
   description:
-    "Established 100K+ follower TikTok Affiliate accounts, delivered securely with a 30-day warranty. The premium source trusted by top TikTok Shop mentors.",
+    "Established 100K+ follower TikTok Affiliate accounts, delivered securely with a 14-day warranty. The premium source trusted by top TikTok Shop mentors.",
 };
 
 export default function RootLayout({

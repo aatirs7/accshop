@@ -10,7 +10,7 @@ export function GuaranteeBanner() {
           Risk-free purchase guarantee
         </h2>
         <p className="mx-auto mt-3 max-w-xl leading-relaxed text-muted-foreground text-balance">
-          Every account is covered by a 30-day replacement warranty. If it's
+          Every account is covered by a 14-day replacement warranty. If it's
           banned, restricted from TikTok Shop Affiliate, or not as described, we
           replace it, no questions, no runaround.
         </p>

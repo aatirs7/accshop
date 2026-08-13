@@ -10,7 +10,7 @@ export function SiteFooter() {
           </span>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             Established TikTok Affiliate accounts, sourced for low ban risk and
-            delivered securely, with a 30-day warranty on every order.
+            delivered securely, with a 14-day warranty on every order.
           </p>
         </div>
         <div>

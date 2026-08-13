@@ -9,6 +9,7 @@ import {
   deleteProductImage,
   deleteProductVariant,
   updateProduct,
+  uploadProductImage,
 } from "@/actions/admin/products";
 import type { ActionResult } from "@/actions/admin/orders";
 import { Button } from "@/components/ui/button";
@@ -179,14 +180,32 @@ export function ProductEditor({ product }: { product: EditorProduct }) {
             </div>
           ))}
         </div>
+        {/* Upload from camera roll / photo library */}
         <form
-          action={(fd) => run(() => addProductImage(fd), "Image added")}
-          className="mt-3 flex gap-2"
+          action={(fd) => run(() => uploadProductImage(fd), "Image uploaded")}
+          className="mt-3 flex flex-wrap items-center gap-2"
         >
           <input type="hidden" name="productId" value={product.id} />
-          <Input name="url" placeholder="https://image-url" className="h-9" />
+          <input
+            type="file"
+            name="file"
+            accept="image/*"
+            required
+            className="text-xs file:mr-3 file:rounded-md file:border-0 file:bg-brand-gold file:px-3 file:py-1.5 file:text-[oklch(0.17_0.02_85)]"
+          />
+          <Button type="submit" size="sm" disabled={pending}>
+            {pending ? "Uploading…" : "Upload photo"}
+          </Button>
+        </form>
+        {/* Or paste an image URL */}
+        <form
+          action={(fd) => run(() => addProductImage(fd), "Image added")}
+          className="mt-2 flex gap-2"
+        >
+          <input type="hidden" name="productId" value={product.id} />
+          <Input name="url" placeholder="…or paste an image URL" className="h-9" />
           <Button type="submit" size="sm" variant="outline" disabled={pending}>
-            Add
+            Add URL
           </Button>
         </form>
       </div>

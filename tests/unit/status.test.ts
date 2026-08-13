@@ -35,12 +35,13 @@ describe("warranty derivation", () => {
 
   it("is active strictly inside the window", () => {
     const delivered = new Date("2026-01-01T00:00:00Z");
-    const state = warrantyState(delivered, new Date(delivered.getTime() + 10 * day));
+    const state = warrantyState(delivered, new Date(delivered.getTime() + 5 * day));
     expect(state.status).toBe("active");
-    if (state.status === "active") expect(state.daysLeft).toBe(20);
+    if (state.status === "active")
+      expect(state.daysLeft).toBe(WARRANTY_DAYS - 5);
   });
 
-  it("expires exactly at day 30 (boundary)", () => {
+  it("expires exactly at the warranty boundary", () => {
     const delivered = new Date("2026-01-01T00:00:00Z");
     const boundary = new Date(delivered.getTime() + WARRANTY_DAYS * day);
     expect(warrantyState(delivered, boundary).status).toBe("expired");

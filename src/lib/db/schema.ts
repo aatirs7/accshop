@@ -236,10 +236,44 @@ export const partners = pgTable("partners", {
   status: partnerStatus("status").notNull().default("approved"),
   // referral commission on orders attributed to this partner; null = bulk-pricing-only partner
   commissionRateBps: integer("commission_rate_bps"),
+  // Shareable referral code; students who enter it at checkout are attributed.
+  referralCode: text("referral_code").unique(),
   notes: text("notes"),
   approvedAt: timestamp("approved_at", { withTimezone: true, mode: "date" }),
   createdAt: createdAt(),
 });
+
+// Self-serve affiliates: anyone can sign up, get a code, earn commission on
+// referred purchases. Distinct from application-gated partners (wholesale).
+export const affiliates = pgTable("affiliates", {
+  id: id(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  code: text("code").notNull().unique(),
+  commissionRateBps: integer("commission_rate_bps").notNull().default(1000),
+  createdAt: createdAt(),
+});
+
+export const affiliateCommissions = pgTable(
+  "affiliate_commissions",
+  {
+    id: id(),
+    affiliateId: text("affiliate_id")
+      .notNull()
+      .references(() => affiliates.id, { onDelete: "cascade" }),
+    orderId: text("order_id")
+      .notNull()
+      .unique()
+      .references(() => orders.id),
+    amountCents: integer("amount_cents").notNull(),
+    status: commissionStatus("status").notNull().default("accrued"),
+    paidAt: timestamp("paid_at", { withTimezone: true, mode: "date" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("aff_comm_affiliate_idx").on(t.affiliateId, t.status)],
+);
 
 export const partnerPricingRules = pgTable(
   "partner_pricing_rules",
@@ -284,6 +318,9 @@ export const orders = pgTable(
     // One-time email-capture discount applied at checkout.
     discountCode: text("discount_code"),
     discountCents: integer("discount_cents").notNull().default(0),
+    // Affiliate attribution (self-serve referral code entered at checkout).
+    affiliateId: text("affiliate_id"),
+    referralCode: text("referral_code"),
     totalCents: integer("total_cents").notNull(),
     paymentMethod: paymentMethod("payment_method").notNull(),
     paymentStatus: paymentStatus("payment_status").notNull().default("pending"),
@@ -495,6 +532,15 @@ export const auditLogs = pgTable(
   (t) => [index("audit_entity_idx").on(t.entityType, t.entityId)],
 );
 
+// Binary image uploads (product gallery) served via /api/uploads/[id].
+export const uploads = pgTable("uploads", {
+  id: id(),
+  data: bytea("data").notNull(),
+  contentType: text("content_type").notNull(),
+  createdBy: text("created_by").references(() => users.id),
+  createdAt: createdAt(),
+});
+
 export const webhookEvents = pgTable("webhook_events", {
   id: id(),
   provider: text("provider").notNull(),
@@ -514,7 +560,30 @@ export const webhookEvents = pgTable("webhook_events", {
 export const usersRelations = relations(users, ({ many, one }) => ({
   orders: many(orders),
   partner: one(partners, { fields: [users.id], references: [partners.userId] }),
+  affiliate: one(affiliates, {
+    fields: [users.id],
+    references: [affiliates.userId],
+  }),
 }));
+
+export const affiliatesRelations = relations(affiliates, ({ one, many }) => ({
+  user: one(users, { fields: [affiliates.userId], references: [users.id] }),
+  commissions: many(affiliateCommissions),
+}));
+
+export const affiliateCommissionsRelations = relations(
+  affiliateCommissions,
+  ({ one }) => ({
+    affiliate: one(affiliates, {
+      fields: [affiliateCommissions.affiliateId],
+      references: [affiliates.id],
+    }),
+    order: one(orders, {
+      fields: [affiliateCommissions.orderId],
+      references: [orders.id],
+    }),
+  }),
+);
 
 export const productsRelations = relations(products, ({ many }) => ({
   orders: many(orders),

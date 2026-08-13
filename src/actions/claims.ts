@@ -45,7 +45,7 @@ export async function submitWarrantyClaim(
       ok: false,
       error:
         warranty.status === "expired"
-          ? "The 30-day warranty on this account has expired."
+          ? "The 14-day warranty on this account has expired."
           : "Warranty starts once the account is delivered.",
     };
   }

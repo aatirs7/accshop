@@ -9,7 +9,6 @@ import {
   products,
 } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
-import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm, type PriceTier } from "@/components/checkout/checkout-form";
 import { Badge } from "@/components/ui/badge";
@@ -21,9 +20,12 @@ export default async function CheckoutPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ ref?: string; variant?: string }>;
+  searchParams: Promise<{ ref?: string; variant?: string; code?: string }>;
 }) {
-  const [{ slug }, { ref, variant }] = await Promise.all([params, searchParams]);
+  const [{ slug }, { ref, variant, code }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const product = await db.query.products.findFirst({
     where: and(eq(products.slug, slug), eq(products.active, true)),
   });
@@ -105,11 +107,11 @@ export default async function CheckoutPage({
               variants[0]?.id ??
               null
             }
-            discountAmountCents={env.DISCOUNT_AMOUNT_CENTS}
+            initialReferralCode={(code ?? ref ?? "").toUpperCase() || null}
           />
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          All orders include encrypted credential delivery and a 30-day
+          Your account details are emailed to you after payment, plus a 14-day
           replacement warranty. See our{" "}
           <Link href="/warranty" className="underline">
             warranty policy

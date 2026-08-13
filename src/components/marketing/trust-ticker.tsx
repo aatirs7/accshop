@@ -10,7 +10,7 @@ export function TrustTicker({ accountsSold }: { accountsSold: number }) {
     "100% Organic Followers - No Bots",
     "TikTok Shop Ready",
     "Full Account Ownership",
-    "30-Day Warranty on Every Account",
+    "14-Day Warranty on Every Account",
     "New Accounts Restocked Weekly",
   ];
   // Duplicated so the -50% translate loops seamlessly.

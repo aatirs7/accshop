@@ -32,7 +32,7 @@ export default async function AccountsPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground text-balance">
             Every account is affiliate-eligible, sourced for low ban risk, and
-            covered by our 30-day replacement warranty.
+            covered by our 14-day replacement warranty.
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export default async function AccountsPage() {
                     "TikTok Shop Affiliate eligible",
                     "Encrypted credential delivery",
                     "Warmup guide included",
-                    "30-day replacement warranty",
+                    "14-day replacement warranty",
                   ].map((f) => (
                     <li key={f} className="flex gap-2">
                       <span className="text-brand-gold">✦</span>

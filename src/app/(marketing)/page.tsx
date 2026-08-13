@@ -45,36 +45,37 @@ export default async function HomePage() {
           </Badge>
           <h1 className="mt-6 max-w-3xl font-display text-5xl font-medium leading-[1.05] text-balance sm:text-7xl">
             Established TikTok Affiliate accounts,{" "}
-            <em className="text-brand-gold">delivered like a private client
-            service.</em>
+            <em className="text-brand-gold">ready to earn.</em>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground text-balance">
-            100K+ follower accounts sourced for low ban risk, encrypted
-            credential delivery, and a 30-day replacement warranty on every
-            single order.
+            100K+ follower accounts sourced for low ban risk, delivered fast,
+            and backed by a 14-day replacement warranty on every order.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button asChild size="lg">
+            <Button
+              asChild
+              size="lg"
+              className="h-14 rounded-full px-9 text-base font-semibold shadow-lg shadow-brand-gold/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-gold/30"
+            >
               <Link href={flagship ? `/accounts/${flagship.slug}` : "/accounts"}>
-                {flagship
-                  ? `Get a 100K account, ${formatMoney(flagship.retailPriceCents)}`
-                  : "Browse accounts"}
+                Buy an account
+                {flagship ? ` — ${formatMoney(flagship.retailPriceCents)}` : ""}
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button asChild size="lg" variant="outline" className="rounded-full">
               <Link href="/partners">Buying for your students?</Link>
             </Button>
           </div>
           {/* Trust-stat pills */}
           <div className="mt-10">
-            <StatPills accountsSold={proof.accountsSold} rating={proof.rating} />
+            <StatPills accountsSold={proof.accountsSold} />
           </div>
           {/* Trust bar */}
           <dl className="mt-14 grid w-full max-w-2xl grid-cols-3 gap-6 border-t border-border/60 pt-8">
             {[
               ["100K+", "followers per account"],
-              ["30-day", "replacement warranty"],
-              ["Encrypted", "credential delivery"],
+              ["14-day", "replacement warranty"],
+              ["24-72hr", "average delivery"],
             ].map(([stat, label]) => (
               <div key={label}>
                 <dt className="font-display text-2xl text-brand-gold sm:text-3xl">
@@ -104,7 +105,6 @@ export default async function HomePage() {
             compareAtPriceCents: p.compareAtPriceCents,
             screenshotUrl: p.screenshotUrl,
           }))}
-          rating={proof.rating}
         />
       )}
 

@@ -51,7 +51,7 @@ export default async function NewClaimPage({
         ) : (
           <p className="text-sm text-muted-foreground">
             {warranty.status === "expired"
-              ? "The 30-day warranty on this account has expired, so a claim can't be filed. If you believe this is an error, contact support."
+              ? "The 14-day warranty on this account has expired, so a claim can't be filed. If you believe this is an error, contact support."
               : "Warranty coverage begins once this account is delivered."}
           </p>
         )}

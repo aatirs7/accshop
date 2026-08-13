@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
-  emailCaptures,
+  affiliates,
   orders,
   partners,
   productVariants,
@@ -15,18 +15,17 @@ import {
 import { auth } from "@/lib/auth";
 import { resolveUnitPrice } from "@/lib/pricing";
 import { generateOrderCode } from "@/lib/orders/code";
-import { getProvider, type PaymentMethod } from "@/lib/payments/provider";
-import { stripeConfigured } from "@/lib/payments/stripe";
+import { getProvider } from "@/lib/payments/provider";
 import { audit } from "@/lib/audit";
 
 const checkoutSchema = z.object({
   productSlug: z.string().min(1),
   quantity: z.coerce.number().int().min(1).max(100),
   email: z.string().trim().toLowerCase().email(),
-  method: z.enum(["stripe", "zelle"]),
+  method: z.enum(["zelle"]).default("zelle"),
   ref: z.string().optional(),
   variantId: z.string().optional(),
-  discountCode: z.string().trim().optional(),
+  referralCode: z.string().trim().optional(),
 });
 
 export type CheckoutResult = { ok: false; error: string };
@@ -39,23 +38,15 @@ export async function startCheckout(
   if (!parsed.success) {
     return { ok: false, error: "Please check your email and quantity." };
   }
-  const { productSlug, quantity, method, ref, variantId, discountCode } =
-    parsed.data;
-
-  if (method === "stripe" && !stripeConfigured()) {
-    return {
-      ok: false,
-      error: "Card payments are temporarily unavailable, please use Zelle.",
-    };
-  }
+  const { productSlug, quantity, ref, variantId, referralCode } = parsed.data;
 
   const product = await db.query.products.findFirst({
     where: and(eq(products.slug, productSlug), eq(products.active, true)),
   });
   if (!product) return { ok: false, error: "This product is no longer available." };
 
-  // Signed-in users buy as themselves; guests get an account upserted by
-  // email (they'll magic-link into it to receive credentials).
+  // Customers don't sign in — we upsert a lightweight user by email so orders
+  // and referral attribution have something to hang on to.
   const session = await auth();
   let userId: string;
   let email: string;
@@ -70,21 +61,44 @@ export async function startCheckout(
     if (existing) {
       userId = existing.id;
     } else {
-      const [created] = await db
-        .insert(users)
-        .values({ email })
-        .returning();
+      const [created] = await db.insert(users).values({ email }).returning();
       userId = created.id;
     }
   }
 
   const price = await resolveUnitPrice(userId, product.id, quantity);
 
-  // Referral attribution (?ref=partnerId): only when the buyer isn't the
-  // partner themself and partner pricing didn't already claim the order.
   let source: "retail" | "partner" | "referral" = price.source;
   let partnerId = price.partnerId;
-  if (ref && price.source === "retail") {
+  let affiliateId: string | null = null;
+  let attributedCode: string | null = null;
+
+  // Referral: a code entered at checkout matches an affiliate first, then a
+  // partner/coach code. ?ref=partnerId link still works for partners.
+  const codeInput = (referralCode ?? "").trim().toUpperCase();
+  if (codeInput) {
+    const affiliate = await db.query.affiliates.findFirst({
+      where: eq(affiliates.code, codeInput),
+    });
+    if (affiliate && affiliate.userId !== userId) {
+      affiliateId = affiliate.id;
+      attributedCode = affiliate.code;
+      source = "referral";
+    } else {
+      const coach = await db.query.partners.findFirst({
+        where: and(
+          eq(partners.referralCode, codeInput),
+          eq(partners.status, "approved"),
+        ),
+      });
+      if (coach && coach.userId !== userId && price.source === "retail") {
+        partnerId = coach.id;
+        attributedCode = coach.referralCode;
+        source = "referral";
+      }
+    }
+  }
+  if (!attributedCode && ref && price.source === "retail") {
     const refPartner = await db.query.partners.findFirst({
       where: and(eq(partners.id, ref), eq(partners.status, "approved")),
     });
@@ -94,7 +108,7 @@ export async function startCheckout(
     }
   }
 
-  // Variant price delta (e.g. "Enable TikTok Shop" +$50), on top of resolved price.
+  // Variant price delta (e.g. "Enable TikTok Shop" +$50).
   let variant: { id: string; label: string; priceDeltaCents: number } | null =
     null;
   if (variantId) {
@@ -107,24 +121,7 @@ export async function startCheckout(
     if (v) variant = { id: v.id, label: v.label, priceDeltaCents: v.priceDeltaCents };
   }
   const unitPriceCents = price.unitPriceCents + (variant?.priceDeltaCents ?? 0);
-
-  // One-time email-capture discount (flat, order-level).
-  let appliedDiscountCode: string | null = null;
-  let discountCents = 0;
-  if (discountCode) {
-    const capture = await db.query.emailCaptures.findFirst({
-      where: eq(emailCaptures.discountCode, discountCode.toUpperCase()),
-    });
-    if (capture && !capture.redeemedAt) {
-      appliedDiscountCode = capture.discountCode;
-      discountCents = capture.discountAmountCents;
-    }
-  }
-
-  const subtotal = unitPriceCents * quantity;
-  // Never discount below $1 so the payment stays valid.
-  const totalCents = Math.max(100, subtotal - discountCents);
-  discountCents = subtotal - totalCents;
+  const totalCents = unitPriceCents * quantity;
 
   let order;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -135,15 +132,15 @@ export async function startCheckout(
           orderCode: generateOrderCode(),
           userId,
           partnerId,
+          affiliateId,
+          referralCode: attributedCode,
           productId: product.id,
           quantity,
           unitPriceCents,
           variantId: variant?.id ?? null,
           variantLabel: variant?.label ?? null,
-          discountCode: appliedDiscountCode,
-          discountCents,
           totalCents,
-          paymentMethod: method as PaymentMethod,
+          paymentMethod: "zelle",
           source,
         })
         .returning();
@@ -161,17 +158,16 @@ export async function startCheckout(
     entityId: order.id,
     metadata: {
       orderCode: order.orderCode,
-      method,
       quantity,
       totalCents,
       variant: variant?.label ?? null,
-      discountCode: appliedDiscountCode,
+      referralCode: attributedCode,
     },
   });
 
   let redirectUrl: string;
   try {
-    const initiated = await getProvider(method as PaymentMethod).initiate({
+    const initiated = await getProvider("zelle").initiate({
       id: order.id,
       orderCode: order.orderCode,
       quantity,
@@ -181,22 +177,13 @@ export async function startCheckout(
       customerEmail: email,
     });
     redirectUrl = initiated.redirectUrl;
-    if (initiated.checkoutSessionId) {
-      await db
-        .update(orders)
-        .set({ stripeCheckoutSessionId: initiated.checkoutSessionId })
-        .where(eq(orders.id, order.id));
-    }
   } catch (err) {
     console.error("Payment initiation failed", err);
     await db
       .update(orders)
       .set({ paymentStatus: "cancelled" })
       .where(eq(orders.id, order.id));
-    return {
-      ok: false,
-      error: "We couldn't start the payment. Please try again or use Zelle.",
-    };
+    return { ok: false, error: "We couldn't start your order. Please try again." };
   }
 
   redirect(redirectUrl);

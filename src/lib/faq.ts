@@ -13,26 +13,26 @@ export const FAQS: FaqEntry[] = [
   {
     question: "How does it work?",
     answer:
-      "Pick an account, check out with card or Zelle, and we source it from our vetted supplier network. Once it's ready, your login credentials appear securely in your dashboard (never by email). Every account includes a warmup guide and a 30-day warranty.",
+      "Pick an account and check out with Zelle. We source it from our vetted supplier network, then email your login details straight to you, usually within 24 to 72 hours. Every account includes a warmup guide and a 14-day warranty.",
     keywords: ["how", "work", "works", "process", "buy", "purchase", "start", "get started"],
     link: { href: "/accounts", label: "Browse accounts" },
   },
   {
     question: "How fast is delivery?",
     answer:
-      "Most accounts are delivered within 24 to 72 hours. Card payments confirm instantly; Zelle payments are confirmed manually, usually within a few hours. You'll get an email the moment your credentials are ready to view.",
-    keywords: ["fast", "delivery", "deliver", "long", "time", "when", "receive", "wait", "how long", "quick", "speed"],
+      "Most accounts are delivered within 24 to 72 hours. Once your Zelle payment is confirmed (usually a few hours), we email your account login details directly to you.",
+    keywords: ["fast", "delivery", "deliver", "long", "time", "when", "receive", "wait", "how long", "quick", "speed", "email"],
   },
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept credit/debit card (instant) and Zelle (no fees, confirmed manually). At checkout you'll get a unique order code to put in your Zelle memo so we can match your payment.",
-    keywords: ["pay", "payment", "card", "zelle", "crypto", "paypal", "method", "stripe", "checkout"],
+      "We accept Zelle. At checkout you'll get a unique order code to include in your Zelle memo so we can match your payment quickly.",
+    keywords: ["pay", "payment", "card", "zelle", "crypto", "paypal", "method", "checkout"],
   },
   {
     question: "What does the warranty cover?",
     answer:
-      "Every account has a 30-day replacement warranty from delivery. If it's banned, restricted from TikTok Shop Affiliate, or not as described, we replace it. Issues from breaking TikTok's rules or skipping the warmup guide aren't covered.",
+      "Every account has a 14-day replacement warranty from delivery. If it's banned, restricted from TikTok Shop Affiliate, or not as described, we replace it. Issues from breaking TikTok's rules or skipping the warmup guide aren't covered.",
     keywords: ["warranty", "guarantee", "replace", "replacement", "banned", "ban", "refund", "protect", "covered", "coverage", "claim"],
     link: { href: "/warranty", label: "Read the warranty policy" },
   },
@@ -57,28 +57,28 @@ export const FAQS: FaqEntry[] = [
   {
     question: "How are login credentials delivered?",
     answer:
-      "Securely, never by plain email. After your account is ready, you sign in to your dashboard and reveal the encrypted credentials once. Have a password manager ready to save them.",
-    keywords: ["credential", "credentials", "login", "delivered", "secure", "password", "reveal", "dashboard", "details"],
-    link: { href: "/dashboard", label: "Go to dashboard" },
+      "By email. Once your payment is confirmed and the account is ready, we email your username, password, and linked email. Change the password and recovery email right away and save them somewhere safe.",
+    keywords: ["credential", "credentials", "login", "delivered", "password", "email", "details", "receive"],
+  },
+  {
+    question: "Can I earn by referring people?",
+    answer:
+      "Yes! Sign up as an affiliate for free, get a unique referral code, and earn 10% (that's $55) on every account sold through your link. Track your referrals and commission in your dashboard.",
+    keywords: ["affiliate", "refer", "referral", "commission", "earn", "10%", "code", "money", "payout"],
+    link: { href: "/affiliates", label: "Become an affiliate" },
   },
   {
     question: "Do you offer bulk or partner pricing?",
     answer:
-      "Yes. Mentors and programs ordering 10+ accounts get wholesale pricing, and our partner program offers referral commissions. Partner pricing is application-only.",
-    keywords: ["bulk", "wholesale", "partner", "mentor", "discount", "volume", "10", "quantity", "reseller", "program", "commission"],
+      "Yes. Coaches and programs ordering 10+ accounts get wholesale pricing plus referral commissions through our partner program. It's application-only.",
+    keywords: ["bulk", "wholesale", "partner", "coach", "mentor", "volume", "quantity", "reseller", "program"],
     link: { href: "/partners", label: "See the partner program" },
-  },
-  {
-    question: "Is there a discount for first orders?",
-    answer:
-      "Yes, drop your email in the offer popup for $10 off your first account. It sends a one-time code you can use at checkout.",
-    keywords: ["discount", "coupon", "code", "promo", "off", "cheap", "deal", "offer", "save", "10"],
   },
   {
     question: "How do I contact support?",
     answer:
-      "Reply to any ACCSHOP email and it reaches our inbox, or use the contact page. If you already have an order, your dashboard is the fastest way to track it or file a warranty claim.",
-    keywords: ["contact", "support", "help", "reach", "email", "talk", "human", "message", "question"],
+      "Email aashirsiddiqui13@gmail.com anytime with your order code and we'll help, whether it's a question before buying, delivery, or a warranty claim.",
+    keywords: ["contact", "support", "help", "reach", "email", "talk", "human", "message", "question", "warranty"],
     link: { href: "/contact", label: "Contact support" },
   },
 ];
