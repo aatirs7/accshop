@@ -54,8 +54,11 @@ export default async function AdminOrderDetailPage({
     }),
   ]);
 
-  const costCents = items.reduce((s, d) => s + (d.costCents ?? 0), 0);
-  const costsKnown = items.every((d) => d.costCents != null) && items.length > 0;
+  // Cost = per-account override where set, else the product's cost basis.
+  const costCents =
+    items.length > 0
+      ? items.reduce((s, d) => s + (d.costCents ?? order.product.costCents), 0)
+      : order.quantity * order.product.costCents;
   const next = nextFulfillmentStatus(order.fulfillmentStatus);
 
   return (
@@ -120,16 +123,14 @@ export default async function AdminOrderDetailPage({
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              Supplier cost
+              Cost
             </p>
             <p className="mt-1 font-display text-2xl">
-              {costsKnown ? formatMoney(costCents) : "-"}
+              {formatMoney(costCents)}
             </p>
-            {!costsKnown && (
-              <p className="text-xs text-muted-foreground">
-                assign suppliers below
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {formatMoney(order.product.costCents)}/account
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -138,7 +139,7 @@ export default async function AdminOrderDetailPage({
               Margin
             </p>
             <p className="mt-1 font-display text-2xl text-brand-gold">
-              {costsKnown ? formatMoney(order.totalCents - costCents) : "-"}
+              {formatMoney(order.totalCents - costCents)}
             </p>
           </CardContent>
         </Card>

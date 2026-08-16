@@ -72,6 +72,7 @@ const productSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(4000),
   retailPrice: z.coerce.number().min(1).max(1_000_000),
+  cost: z.coerce.number().min(0).max(1_000_000),
   compareAtPrice: z.string().optional(),
   stockLabel: z.enum(["high", "low", "extremely_low"]),
   screenshotUrl: z.string().trim().max(2000).optional(),
@@ -92,6 +93,7 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
       name: d.name,
       description: d.description,
       retailPriceCents: Math.round(d.retailPrice * 100),
+      costCents: Math.round(d.cost * 100),
       compareAtPriceCents: compareAt,
       stockLabel: d.stockLabel,
       screenshotUrl: d.screenshotUrl || null,
@@ -107,6 +109,7 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
     entityId: d.productId,
   });
   revalidatePath("/admin/products");
+  revalidatePath("/admin");
   revalidatePath("/accounts");
   revalidatePath("/");
   return { ok: true };

@@ -5,6 +5,7 @@ import {
   deliverables,
   orders,
   partners,
+  products,
   users,
 } from "@/lib/db/schema";
 
@@ -23,15 +24,16 @@ export async function revenueSummary(sinceDays?: number) {
     .from(orders)
     .where(since ? and(paid, since) : paid);
 
+  // Cost per delivered account: the per-order override if set, else the
+  // product's cost-per-account basis.
   const [costRow] = await db
     .select({
-      costCents: sql<number>`coalesce(sum(${deliverables.costCents}), 0)`,
+      costCents: sql<number>`coalesce(sum(coalesce(${deliverables.costCents}, ${products.costCents})), 0)`,
     })
     .from(deliverables)
     .innerJoin(orders, eq(deliverables.orderId, orders.id))
-    .where(
-      since ? and(paid, since) : paid,
-    );
+    .innerJoin(products, eq(orders.productId, products.id))
+    .where(since ? and(paid, since) : paid);
 
   return {
     revenueCents: Number(row.revenueCents),

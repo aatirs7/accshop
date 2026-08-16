@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "cost_cents" integer DEFAULT 18000 NOT NULL;

@@ -170,6 +170,9 @@ export const products = pgTable("products", {
   followerMin: integer("follower_min").notNull(),
   description: text("description").notNull().default(""),
   retailPriceCents: integer("retail_price_cents").notNull(),
+  // Cost basis paid to the supplier per account. Drives margin in reporting;
+  // a per-deliverable cost can still override it for a specific order.
+  costCents: integer("cost_cents").notNull().default(18000),
   // Strikethrough "was $X" anchor price; null hides it.
   compareAtPriceCents: integer("compare_at_price_cents"),
   // Scarcity signal shown on the product page; manually curated, not live inventory.

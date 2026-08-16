@@ -65,6 +65,7 @@ export default async function AdminProductsPage() {
                 slug: product.slug,
                 description: product.description,
                 retailPriceCents: product.retailPriceCents,
+                costCents: product.costCents,
                 compareAtPriceCents: product.compareAtPriceCents,
                 stockLabel: product.stockLabel,
                 screenshotUrl: product.screenshotUrl,

@@ -38,6 +38,7 @@ export interface EditorProduct {
   slug: string;
   description: string;
   retailPriceCents: number;
+  costCents: number;
   compareAtPriceCents: number | null;
   stockLabel: string;
   screenshotUrl: string | null;
@@ -64,7 +65,7 @@ export function ProductEditor({ product }: { product: EditorProduct }) {
             <Input id="name" name="name" defaultValue={product.name} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs" htmlFor="retailPrice">Price ($)</Label>
+            <Label className="text-xs" htmlFor="retailPrice">Sell price ($)</Label>
             <Input
               id="retailPrice"
               name="retailPrice"
@@ -73,6 +74,22 @@ export function ProductEditor({ product }: { product: EditorProduct }) {
               defaultValue={(product.retailPriceCents / 100).toString()}
               className="mt-1"
             />
+          </div>
+          <div>
+            <Label className="text-xs" htmlFor="cost">
+              Cost per account ($)
+            </Label>
+            <Input
+              id="cost"
+              name="cost"
+              type="number"
+              step="0.01"
+              defaultValue={(product.costCents / 100).toString()}
+              className="mt-1"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              What you pay your supplier. Used to calculate margin.
+            </p>
           </div>
           <div>
             <Label className="text-xs" htmlFor="compareAtPrice">
