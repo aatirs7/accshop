@@ -16,13 +16,14 @@ import { auth } from "@/lib/auth";
 import { resolveUnitPrice } from "@/lib/pricing";
 import { generateOrderCode } from "@/lib/orders/code";
 import { getProvider } from "@/lib/payments/provider";
+import { stripeConfigured } from "@/lib/payments/stripe";
 import { audit } from "@/lib/audit";
 
 const checkoutSchema = z.object({
   productSlug: z.string().min(1),
   quantity: z.coerce.number().int().min(1).max(100),
   email: z.string().trim().toLowerCase().email(),
-  method: z.enum(["zelle"]).default("zelle"),
+  method: z.enum(["stripe"]).default("stripe"),
   ref: z.string().optional(),
   variantId: z.string().optional(),
   referralCode: z.string().trim().optional(),
@@ -39,6 +40,14 @@ export async function startCheckout(
     return { ok: false, error: "Please check your email and quantity." };
   }
   const { productSlug, quantity, ref, variantId, referralCode } = parsed.data;
+
+  if (!stripeConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Card checkout is being set up and will be live shortly. Please check back soon or contact support to order.",
+    };
+  }
 
   const product = await db.query.products.findFirst({
     where: and(eq(products.slug, productSlug), eq(products.active, true)),
@@ -140,7 +149,7 @@ export async function startCheckout(
           variantId: variant?.id ?? null,
           variantLabel: variant?.label ?? null,
           totalCents,
-          paymentMethod: "zelle",
+          paymentMethod: "stripe",
           source,
         })
         .returning();
@@ -167,7 +176,7 @@ export async function startCheckout(
 
   let redirectUrl: string;
   try {
-    const initiated = await getProvider("zelle").initiate({
+    const initiated = await getProvider("stripe").initiate({
       id: order.id,
       orderCode: order.orderCode,
       quantity,
@@ -177,6 +186,12 @@ export async function startCheckout(
       customerEmail: email,
     });
     redirectUrl = initiated.redirectUrl;
+    if (initiated.checkoutSessionId) {
+      await db
+        .update(orders)
+        .set({ stripeCheckoutSessionId: initiated.checkoutSessionId })
+        .where(eq(orders.id, order.id));
+    }
   } catch (err) {
     console.error("Payment initiation failed", err);
     await db

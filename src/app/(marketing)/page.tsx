@@ -1,8 +1,8 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, testimonials } from "@/lib/db/schema";
-import { formatMoney } from "@/lib/format";
 import { socialProof } from "@/lib/db/queries/public";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,6 @@ export default async function HomePage() {
             >
               <Link href={flagship ? `/accounts/${flagship.slug}` : "/accounts"}>
                 Buy an account
-                {flagship ? ` — ${formatMoney(flagship.retailPriceCents)}` : ""}
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-full">
@@ -75,7 +74,7 @@ export default async function HomePage() {
             {[
               ["100K+", "followers per account"],
               ["14-day", "replacement warranty"],
-              ["24-72hr", "average delivery"],
+              ["1-5 hrs", "average delivery"],
             ].map(([stat, label]) => (
               <div key={label}>
                 <dt className="font-display text-2xl text-brand-gold sm:text-3xl">

@@ -47,8 +47,8 @@ export default async function CheckoutSuccessPage({
         </p>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           {paid
-            ? "We're preparing your account now. Your login details will be emailed to you as soon as it's ready, usually within 24-72 hours."
-            : "Once your Zelle payment is confirmed, we'll email your account details to you, usually within a few hours."}
+            ? "We're preparing your account now. Your login details will be emailed to you, usually within 1-5 hours."
+            : "Your payment is being confirmed. As soon as it clears, we'll email your account details, usually within 1-5 hours."}
         </p>
         <div className="mt-6 rounded-lg border border-border/60 bg-brand-raised/40 p-4 text-sm">
           <p className="font-medium">Questions about your order?</p>
@@ -62,13 +62,6 @@ export default async function CheckoutSuccessPage({
             </a>
           </p>
         </div>
-        {order.paymentMethod === "zelle" && order.paymentStatus === "pending" && (
-          <Button asChild className="mt-6">
-            <Link href={`/checkout/zelle/${order.orderCode}`}>
-              View Zelle payment details
-            </Link>
-          </Button>
-        )}
       </div>
     </main>
   );

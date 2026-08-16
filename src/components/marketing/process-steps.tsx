@@ -2,7 +2,7 @@ const steps = [
   {
     n: "01",
     title: "Order & pay",
-    body: "Checkout with card or Zelle. Your order gets a unique tracking code the moment it's placed.",
+    body: "Check out securely by card. Your order gets a unique tracking code the moment it's placed.",
   },
   {
     n: "02",

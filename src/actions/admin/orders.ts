@@ -67,23 +67,26 @@ export async function markOrderDelivered(
   return { ok: true };
 }
 
-/** Manual Zelle confirmation, converges on the same path as the Stripe webhook. */
+/**
+ * Manually mark an order paid — the safety valve if the Stripe webhook is
+ * delayed or not yet configured. Converges on the same markOrderPaid path.
+ */
 export async function markZellePaid(
   orderId: string,
-  zelleReference: string,
+  reference: string,
 ): Promise<ActionResult> {
   const admin = await requireAdmin();
   const order = await db.query.orders.findFirst({
     where: eq(orders.id, orderId),
   });
   if (!order) return { ok: false, error: "Order not found." };
-  if (order.paymentMethod !== "zelle") {
-    return { ok: false, error: "Not a Zelle order." };
-  }
   try {
     await markOrderPaid(orderId, {
-      method: "zelle",
-      zelleReference: zelleReference.trim() || "unreferenced",
+      method: order.paymentMethod,
+      zelleReference:
+        order.paymentMethod === "zelle"
+          ? reference.trim() || "unreferenced"
+          : undefined,
       confirmedByUserId: admin.id,
     });
   } catch (err) {

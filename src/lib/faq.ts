@@ -13,21 +13,21 @@ export const FAQS: FaqEntry[] = [
   {
     question: "How does it work?",
     answer:
-      "Pick an account and check out with Zelle. We source it from our vetted supplier network, then email your login details straight to you, usually within 24 to 72 hours. Every account includes a warmup guide and a 14-day warranty.",
+      "Pick an account and check out securely by card. We source it from our vetted supplier network, then email your login details straight to you, usually within 1-5 hours. Every account includes a warmup guide and a 14-day warranty.",
     keywords: ["how", "work", "works", "process", "buy", "purchase", "start", "get started"],
     link: { href: "/accounts", label: "Browse accounts" },
   },
   {
     question: "How fast is delivery?",
     answer:
-      "Most accounts are delivered within 24 to 72 hours. Once your Zelle payment is confirmed (usually a few hours), we email your account login details directly to you.",
+      "Most accounts are delivered within 1-5 hours. As soon as your payment clears, we email your account login details directly to you.",
     keywords: ["fast", "delivery", "deliver", "long", "time", "when", "receive", "wait", "how long", "quick", "speed", "email"],
   },
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept Zelle. At checkout you'll get a unique order code to include in your Zelle memo so we can match your payment quickly.",
-    keywords: ["pay", "payment", "card", "zelle", "crypto", "paypal", "method", "checkout"],
+      "We accept secure card payments (credit and debit) at checkout. Your account details are emailed to you right after payment clears.",
+    keywords: ["pay", "payment", "card", "zelle", "crypto", "paypal", "method", "checkout", "stripe", "debit", "credit"],
   },
   {
     question: "What does the warranty cover?",

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -37,7 +38,9 @@ export default async function ProductPage({
   return (
     <main className="bg-atmosphere">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr]">
+        {/* On mobile the buy box comes first so the price + Buy button are
+            visible instantly; on desktop it sits in the right column. */}
+        <div className="flex flex-col-reverse gap-12 lg:grid lg:grid-cols-[1.2fr_1fr]">
           <div>
             <Badge
               variant="outline"

@@ -58,8 +58,8 @@ export function CheckoutForm(props: {
         <input type="hidden" name="ref" value={props.refPartner} />
       )}
       <input type="hidden" name="variantId" value={variantId} />
-      {/* Zelle is the only rail for now. */}
-      <input type="hidden" name="method" value="zelle" />
+      {/* Card (Stripe) is the only rail. */}
+      <input type="hidden" name="method" value="stripe" />
 
       <div className="space-y-2">
         <Label htmlFor="quantity">Quantity</Label>
@@ -145,10 +145,10 @@ export function CheckoutForm(props: {
       </div>
 
       <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4">
-        <p className="text-sm font-medium">Payment: Zelle</p>
+        <p className="text-sm font-medium">Secure card checkout</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          After you place the order we&apos;ll show you the Zelle details and a
-          code to include, no fees, confirmed within a few hours.
+          You&apos;ll be taken to our secure card checkout to pay. Your account
+          details are emailed to you right after payment.
         </p>
       </div>
 
@@ -166,7 +166,7 @@ export function CheckoutForm(props: {
       )}
 
       <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending ? "Preparing your order…" : "Place order — get Zelle details"}
+        {pending ? "Preparing your order…" : "Continue to secure checkout"}
       </Button>
     </form>
   );

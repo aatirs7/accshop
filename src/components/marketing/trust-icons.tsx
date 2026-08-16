@@ -1,6 +1,6 @@
 const items = [
   { icon: "🔒", label: "Secure Checkout" },
-  { icon: "⚡", label: "24–72hr Delivery" },
+  { icon: "⚡", label: "1-5hr Delivery" },
   { icon: "💬", label: "24/7 Support" },
 ];
 

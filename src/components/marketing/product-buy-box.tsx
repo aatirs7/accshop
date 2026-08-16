@@ -123,8 +123,8 @@ export function ProductBuyBox({
 
       <div className="gold-hairline my-6" />
       <ul className="space-y-3 text-sm text-muted-foreground">
-        <li>✓ Pay securely by Zelle</li>
-        <li>✓ Account details emailed to you after payment</li>
+        <li>✓ Secure card checkout</li>
+        <li>✓ Account emailed to you within 1-5 hours</li>
         <li>✓ 14-day replacement warranty</li>
       </ul>
       <p className="mt-6 text-center text-xs text-muted-foreground">

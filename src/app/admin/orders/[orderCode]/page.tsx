@@ -150,16 +150,22 @@ export default async function AdminOrderDetailPage({
           <CardTitle className="text-base">Actions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          {order.paymentStatus === "pending" && order.paymentMethod === "zelle" && (
-            <PromptActionButton
-              action={markZellePaid.bind(null, order.id)}
-              promptText={`Zelle reference for ${order.orderCode}:`}
-              variant="default"
-              successText="Marked paid"
-              allowEmpty
-            >
-              Mark Zelle paid, {formatMoney(order.totalCents)}
-            </PromptActionButton>
+          {order.paymentStatus === "pending" && (
+            <>
+              <p className="w-full text-sm text-muted-foreground">
+                Card payments confirm automatically via Stripe. Use this only if
+                the webhook is delayed or you took payment another way.
+              </p>
+              <PromptActionButton
+                action={markZellePaid.bind(null, order.id)}
+                promptText={`Payment reference for ${order.orderCode} (optional):`}
+                variant="default"
+                successText="Marked paid"
+                allowEmpty
+              >
+                Mark paid manually, {formatMoney(order.totalCents)}
+              </PromptActionButton>
+            </>
           )}
           {order.paymentStatus === "paid" && next && (
             <AdvanceStageButton
