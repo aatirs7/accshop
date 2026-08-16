@@ -13,7 +13,8 @@ import { audit } from "@/lib/audit";
 
 const schema = z.object({
   email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(1),
+  // Trim to forgive stray spaces added by mobile keyboards.
+  password: z.string().trim().min(1),
 });
 
 const SESSION_DAYS = 30;

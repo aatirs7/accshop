@@ -18,6 +18,9 @@ export function AdminLoginForm() {
           type="email"
           required
           autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder="you@example.com"
         />
       </div>
@@ -29,6 +32,9 @@ export function AdminLoginForm() {
           type="password"
           required
           autoComplete="current-password"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
         />
       </div>
       {state?.error && (
