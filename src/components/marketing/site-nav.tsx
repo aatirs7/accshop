@@ -51,7 +51,7 @@ export async function SiteNav() {
             </Button>
           )}
           <Button asChild size="sm">
-            <Link href="/accounts">Browse accounts</Link>
+            <Link href="/accounts">Buy now</Link>
           </Button>
         </div>
       </div>

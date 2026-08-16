@@ -1,16 +1,12 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { deliverables, suppliers } from "@/lib/db/schema";
 import { formatMoney } from "@/lib/format";
-import { toggleSupplierActive } from "@/actions/admin/catalog";
-import { ActionButton } from "@/components/admin/action-button";
-import { SupplierForm } from "@/components/admin/queue-actions";
-import { Badge } from "@/components/ui/badge";
+import { SupplierForm, SupplierRow } from "@/components/admin/queue-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -60,39 +56,24 @@ export default async function AdminSuppliersPage() {
             <TableBody>
               {supplierRows.map((s) => {
                 const st = bySupplier.get(s.id);
+                const fulfilled = st ? Number(st.fulfilled) : 0;
+                const avgCostLabel =
+                  st && fulfilled > 0
+                    ? formatMoney(Math.round(Number(st.avgCostCents)))
+                    : s.defaultCostCents
+                      ? `${formatMoney(s.defaultCostCents)} (default)`
+                      : "-";
+                const totalPaidLabel = st
+                  ? formatMoney(Number(st.totalCostCents))
+                  : "-";
                 return (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {s.contactHandle ?? "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {st ? Number(st.fulfilled) : 0}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {st && Number(st.fulfilled) > 0
-                        ? formatMoney(Math.round(Number(st.avgCostCents)))
-                        : s.defaultCostCents
-                          ? `${formatMoney(s.defaultCostCents)} (default)`
-                          : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {st ? formatMoney(Number(st.totalCostCents)) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {s.active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <ActionButton
-                        action={toggleSupplierActive.bind(null, s.id, !s.active)}
-                        successText={s.active ? "Deactivated" : "Activated"}
-                      >
-                        {s.active ? "Deactivate" : "Activate"}
-                      </ActionButton>
-                    </TableCell>
-                  </TableRow>
+                  <SupplierRow
+                    key={s.id}
+                    supplier={s}
+                    fulfilled={fulfilled}
+                    avgCostLabel={avgCostLabel}
+                    totalPaidLabel={totalPaidLabel}
+                  />
                 );
               })}
             </TableBody>

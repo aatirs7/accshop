@@ -38,10 +38,11 @@ export default async function ProductPage({
   return (
     <main className="bg-atmosphere">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        {/* On mobile the buy box comes first so the price + Buy button are
-            visible instantly; on desktop it sits in the right column. */}
-        <div className="flex flex-col-reverse gap-12 lg:grid lg:grid-cols-[1.2fr_1fr]">
-          <div>
+        {/* Mobile: image, title, buy option first (order-*), extra details
+            pushed below. Desktop: title/gallery/details in the left column,
+            buy box sticky in the right column (grid placement). */}
+        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.2fr_1fr] lg:gap-x-12 lg:gap-y-10">
+          <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1">
             <Badge
               variant="outline"
               className="border-brand-gold/40 text-brand-gold"
@@ -51,16 +52,32 @@ export default async function ProductPage({
             <h1 className="mt-4 font-display text-4xl font-medium leading-tight sm:text-5xl">
               {product.name}
             </h1>
+          </div>
 
-            <div className="mt-6">
-              <ProductGallery
-                images={images.map((i) => ({ id: i.id, url: i.url }))}
-                tierLabel={product.tierLabel}
-                alt={product.name}
-              />
-            </div>
+          <div className="order-1 lg:order-none lg:col-start-1 lg:row-start-2">
+            <ProductGallery
+              images={images.map((i) => ({ id: i.id, url: i.url }))}
+              tierLabel={product.tierLabel}
+              alt={product.name}
+            />
+          </div>
 
-            <p className="mt-8 max-w-xl leading-relaxed text-muted-foreground">
+          <div className="order-3 lg:order-none lg:col-start-2 lg:row-start-1">
+            <ProductBuyBox
+              slug={product.slug}
+              basePriceCents={product.retailPriceCents}
+              compareAtPriceCents={product.compareAtPriceCents}
+              stockLabel={product.stockLabel}
+              variants={variants.map((v) => ({
+                id: v.id,
+                label: v.label,
+                priceDeltaCents: v.priceDeltaCents,
+              }))}
+            />
+          </div>
+
+          <div className="order-4 lg:order-none lg:col-start-1 lg:row-start-3">
+            <p className="max-w-xl leading-relaxed text-muted-foreground">
               {product.description}
             </p>
             <ul className="mt-8 grid gap-3 text-sm sm:grid-cols-2">
@@ -84,18 +101,6 @@ export default async function ProductPage({
               ))}
             </div>
           </div>
-
-          <ProductBuyBox
-            slug={product.slug}
-            basePriceCents={product.retailPriceCents}
-            compareAtPriceCents={product.compareAtPriceCents}
-            stockLabel={product.stockLabel}
-            variants={variants.map((v) => ({
-              id: v.id,
-              label: v.label,
-              priceDeltaCents: v.priceDeltaCents,
-            }))}
-          />
         </div>
       </div>
     </main>

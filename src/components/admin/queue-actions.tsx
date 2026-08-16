@@ -17,12 +17,20 @@ import {
   createSupplier,
   createTestimonial,
   rejectSubmission,
+  toggleSupplierActive,
+  updateSupplier,
+  updateTestimonial,
 } from "@/actions/admin/catalog";
+import { setTestimonialFlags, deleteTestimonial } from "@/actions/admin/catalog";
 import type { ActionResult } from "@/actions/admin/orders";
+import { ActionButton } from "@/components/admin/action-button";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 function useRun() {
   const [pending, startTransition] = useTransition();
@@ -362,5 +370,215 @@ export function TestimonialForm() {
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
     </form>
+  );
+}
+
+export interface SupplierRowData {
+  id: string;
+  name: string;
+  contactHandle: string | null;
+  defaultCostCents: number | null;
+  notes: string | null;
+  active: boolean;
+}
+
+export function SupplierRow({
+  supplier,
+  fulfilled,
+  avgCostLabel,
+  totalPaidLabel,
+}: {
+  supplier: SupplierRowData;
+  fulfilled: number;
+  avgCostLabel: string;
+  totalPaidLabel: string;
+}) {
+  const { pending, run } = useRun();
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return (
+      <TableRow>
+        <TableCell colSpan={7}>
+          <form
+            className="space-y-3 py-2"
+            action={(fd) => {
+              run(() => updateSupplier(fd), "Supplier updated");
+              setEditing(false);
+            }}
+          >
+            <input type="hidden" name="supplierId" value={supplier.id} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <Label className="text-xs">Name *</Label>
+                <Input name="name" defaultValue={supplier.name} required className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Contact handle</Label>
+                <Input name="contactHandle" defaultValue={supplier.contactHandle ?? ""} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Default cost (cents)</Label>
+                <Input
+                  name="defaultCostCents"
+                  type="number"
+                  defaultValue={supplier.defaultCostCents ?? ""}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Notes</Label>
+              <Textarea name="notes" rows={2} defaultValue={supplier.notes ?? ""} className="mt-1" />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={pending}>Save</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+            </div>
+          </form>
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{supplier.name}</TableCell>
+      <TableCell className="text-muted-foreground">{supplier.contactHandle ?? "-"}</TableCell>
+      <TableCell className="text-right">{fulfilled}</TableCell>
+      <TableCell className="text-right">{avgCostLabel}</TableCell>
+      <TableCell className="text-right">{totalPaidLabel}</TableCell>
+      <TableCell>
+        <Badge variant="outline">{supplier.active ? "Active" : "Inactive"}</Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+          <ActionButton
+            action={toggleSupplierActive.bind(null, supplier.id, !supplier.active)}
+            successText={supplier.active ? "Deactivated" : "Activated"}
+          >
+            {supplier.active ? "Deactivate" : "Activate"}
+          </ActionButton>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+export interface TestimonialItemData {
+  id: string;
+  authorName: string;
+  authorHandle: string | null;
+  content: string;
+  rating: number;
+  published: boolean;
+  featured: boolean;
+}
+
+export function TestimonialAdminItem({
+  testimonial: t,
+}: {
+  testimonial: TestimonialItemData;
+}) {
+  const { pending, run } = useRun();
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <form
+            className="space-y-3"
+            action={(fd) => {
+              run(() => updateTestimonial(fd), "Testimonial updated");
+              setEditing(false);
+            }}
+          >
+            <input type="hidden" name="id" value={t.id} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <Label className="text-xs">Author *</Label>
+                <Input name="authorName" defaultValue={t.authorName} required className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Handle</Label>
+                <Input name="authorHandle" defaultValue={t.authorHandle ?? ""} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Rating (1–5)</Label>
+                <Input name="rating" type="number" min={1} max={5} defaultValue={t.rating} className="mt-1" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Quote *</Label>
+              <Textarea name="content" rows={3} defaultValue={t.content} required className="mt-1" />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={pending}>Save</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium">{t.authorName}</p>
+              {t.authorHandle && (
+                <span className="text-sm text-muted-foreground">{t.authorHandle}</span>
+              )}
+              <span className="text-brand-gold">{"★".repeat(t.rating)}</span>
+              {t.published ? (
+                <Badge variant="outline" className="border-brand-success/50 text-brand-success">
+                  Published
+                </Badge>
+              ) : (
+                <Badge variant="outline">Hidden</Badge>
+              )}
+              {t.featured && (
+                <Badge variant="outline" className="border-brand-gold/40 text-brand-gold">
+                  Featured
+                </Badge>
+              )}
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">{t.content}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" disabled={pending} onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+            <ActionButton
+              action={setTestimonialFlags.bind(null, t.id, { published: !t.published })}
+              successText={t.published ? "Hidden" : "Published"}
+            >
+              {t.published ? "Hide" : "Publish"}
+            </ActionButton>
+            <ActionButton
+              action={setTestimonialFlags.bind(null, t.id, { featured: !t.featured })}
+              successText="Updated"
+            >
+              {t.featured ? "Unfeature" : "Feature"}
+            </ActionButton>
+            <ActionButton
+              action={deleteTestimonial.bind(null, t.id)}
+              variant="destructive"
+              confirmText="Delete this testimonial permanently?"
+              successText="Deleted"
+            >
+              Delete
+            </ActionButton>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
