@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
+import { AdminLoginForm } from "@/components/admin/admin-login-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export const metadata = { title: "Admin" };
 
@@ -22,8 +30,30 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Authoritative gate: non-admins get a 404, not a 403.
-  await requireAdmin();
+  const session = await auth();
+
+  // Not signed in as an admin: show the login form right here at /admin.
+  if (session?.user?.role !== "admin") {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Link
+              href="/"
+              className="font-display text-xl font-bold tracking-[0.2em] text-brand-gold"
+            >
+              ACCSHOP
+            </Link>
+            <CardTitle className="mt-4 text-2xl">Admin sign in</CardTitle>
+            <CardDescription>Staff access only.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminLoginForm />
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">

@@ -80,7 +80,7 @@ export default async function LoginPage({
           </p>
           <p className="mt-3 text-center text-sm text-muted-foreground">
             Staff?{" "}
-            <Link href="/admin-login" className="text-brand-gold underline">
+            <Link href="/admin" className="text-brand-gold underline">
               Sign in with a password
             </Link>
           </p>

@@ -32,7 +32,7 @@ export default function CheckEmailPage() {
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
             Staff member?{" "}
-            <Link href="/admin-login" className="text-brand-gold underline">
+            <Link href="/admin" className="text-brand-gold underline">
               Sign in with a password
             </Link>
           </p>

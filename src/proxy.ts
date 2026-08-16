@@ -22,5 +22,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  // /admin is handled by the admin layout itself (it shows the login form when
+  // signed out), so it's intentionally not matched here.
+  matcher: ["/dashboard/:path*"],
 };
