@@ -18,6 +18,7 @@ import {
   OrderConfirmationEmail,
 } from "@/lib/email/templates";
 import { audit } from "@/lib/audit";
+import { sendPushToAdmins } from "@/lib/push/send";
 
 /**
  * The single paid-transition for BOTH rails: the Stripe webhook and the
@@ -167,6 +168,12 @@ export async function markOrderPaid(
       }),
     ),
   );
+
+  await sendPushToAdmins({
+    title: `💰 Sale: ${formatMoney(order.totalCents)}`,
+    body: `${order.orderCode}, ${order.quantity}× ${order.product.name} via ${opts.method}`,
+    url: `/admin/orders/${order.orderCode}`,
+  });
 
   return { ok: true };
 }

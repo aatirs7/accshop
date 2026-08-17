@@ -16,6 +16,10 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default("ACCSHOP <onboarding@resend.dev>"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  // Web push (admin "new sale" / "new order" alerts). Both required to send;
+  // generate with `npx web-push generate-vapid-keys`.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
   // 32 bytes, base64, encrypts delivered account credentials at rest
   CREDENTIAL_KEY_V1: z.string().min(40),
   CREDENTIAL_KEY_VERSION: z.coerce.number().int().default(1),

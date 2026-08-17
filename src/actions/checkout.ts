@@ -18,6 +18,8 @@ import { generateOrderCode } from "@/lib/orders/code";
 import { getProvider } from "@/lib/payments/provider";
 import { stripeConfigured } from "@/lib/payments/stripe";
 import { audit } from "@/lib/audit";
+import { formatMoney } from "@/lib/format";
+import { sendPushToAdmins } from "@/lib/push/send";
 
 const checkoutSchema = z.object({
   productSlug: z.string().min(1),
@@ -172,6 +174,14 @@ export async function startCheckout(
       variant: variant?.label ?? null,
       referralCode: attributedCode,
     },
+  });
+
+  // Fires as soon as checkout starts (this site has no separate cart step),
+  // so the admin sees purchase intent even if the buyer doesn't finish paying.
+  await sendPushToAdmins({
+    title: "New checkout started",
+    body: `${quantity}× ${product.name}, ${formatMoney(totalCents)}`,
+    url: `/admin/orders/${order.orderCode}`,
   });
 
   let redirectUrl: string;

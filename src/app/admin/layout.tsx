@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { AdminPwaRegistrar } from "@/components/admin/admin-pwa-registrar";
+import { AdminPushToggle } from "@/components/admin/admin-push-toggle";
 import {
   Card,
   CardContent,
@@ -115,6 +117,11 @@ export default async function AdminLayout({
             ))}
           </nav>
         </div>
+        {env.VAPID_PUBLIC_KEY && (
+          <div className="flex justify-end border-b border-border/60 px-6 py-2 lg:px-10">
+            <AdminPushToggle vapidPublicKey={env.VAPID_PUBLIC_KEY} />
+          </div>
+        )}
         <main className="p-6 lg:p-10">{children}</main>
       </div>
     </div>

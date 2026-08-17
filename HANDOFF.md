@@ -26,6 +26,7 @@ These are **"drop in the key"** items — infra is wired, just add values in Ver
 1. **`RESEND_API_KEY`** + **`EMAIL_FROM`** — REQUIRED FOR LOGIN. Without it, magic-link sign-in emails print to Vercel function logs instead of sending, so no one (including admin) can actually sign in on production. Use a verified sending domain in `EMAIL_FROM`.
 2. **`STRIPE_SECRET_KEY`** + **`STRIPE_WEBHOOK_SECRET`** — enables card checkout. Register the webhook at `https://accshop-six.vercel.app/api/webhooks/stripe` for events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`. Note: Stripe's ToS restricts social-account sales — Zelle is the independent fallback rail.
 3. **`ZELLE_RECIPIENT_NAME`** + **`ZELLE_RECIPIENT_HANDLE`** — real Zelle details shown on the payment-instructions page.
+4. **`VAPID_PUBLIC_KEY`** + **`VAPID_PRIVATE_KEY`** — turns on the "Enable alerts" button in the admin panel, which pushes a phone notification for every new checkout and every paid sale. Generate a pair with `npx web-push generate-vapid-keys`, add both to Vercel, redeploy, then tap "Enable alerts" in the admin panel on your phone (works best after adding the admin panel to your home screen).
 
 ## Env vars already set in Vercel (production)
 
