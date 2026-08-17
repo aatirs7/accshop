@@ -18,6 +18,8 @@ import { generateOrderCode } from "@/lib/orders/code";
 import { getProvider } from "@/lib/payments/provider";
 import { stripeConfigured } from "@/lib/payments/stripe";
 import { audit } from "@/lib/audit";
+import { notifyAdmins } from "@/lib/push";
+import { formatMoney } from "@/lib/format";
 
 const checkoutSchema = z.object({
   productSlug: z.string().min(1),
@@ -172,6 +174,12 @@ export async function startCheckout(
       variant: variant?.label ?? null,
       referralCode: attributedCode,
     },
+  });
+
+  await notifyAdmins({
+    title: "New order started",
+    body: `${order.orderCode}: ${quantity}× ${product.name}, ${formatMoney(totalCents)}`,
+    url: `/admin/orders/${order.orderCode}`,
   });
 
   let redirectUrl: string;

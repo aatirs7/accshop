@@ -33,6 +33,10 @@ const envSchema = z.object({
   SOCIAL_PROOF_RATING: z.string().default("4.8"),
   // Email-capture discount, in cents ($10 off by default).
   DISCOUNT_AMOUNT_CENTS: z.coerce.number().int().default(1000),
+  // Web push (admin sale / new-order alerts). Generate with `npx web-push generate-vapid-keys`.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default("mailto:aashirsiddiqui13@gmail.com"),
 });
 
 export const env = envSchema.parse(process.env);

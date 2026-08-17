@@ -519,6 +519,19 @@ export const emailCaptures = pgTable("email_captures", {
   createdAt: createdAt(),
 });
 
+// Web push subscriptions for admin sale / new-order alerts (one browser/device
+// per row; an admin signed in on two phones gets two rows).
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: id(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: createdAt(),
+});
+
 export const auditLogs = pgTable(
   "audit_logs",
   {
