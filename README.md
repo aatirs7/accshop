@@ -43,7 +43,7 @@ npx tsx --env-file=.env.local scripts/verify-flows.ts  # end-to-end order lifecy
 
 1. Create a **Neon** project; set `DATABASE_URL` to its pooled connection string.
 2. Run `npm run db:migrate` against it (locally with that `DATABASE_URL`, or via CI).
-3. Set env vars in Vercel (see `.env.example`): `AUTH_SECRET`, `CREDENTIAL_KEY_V1` (store a copy in a password manager — losing it makes undelivered credentials unrecoverable), `ADMIN_EMAILS`, `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ZELLE_RECIPIENT_NAME`, `ZELLE_RECIPIENT_HANDLE`, `CRON_SECRET`.
+3. Set env vars in Vercel (see `.env.example`): `AUTH_SECRET`, `CREDENTIAL_KEY_V1` (store a copy in a password manager — losing it makes undelivered credentials unrecoverable), `ADMIN_EMAILS`, `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ZELLE_RECIPIENT_NAME`, `ZELLE_RECIPIENT_HANDLE`, `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (optional, enables admin push alerts — generate with `npx web-push generate-vapid-keys`).
 4. Add the Stripe webhook endpoint `→ /api/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`) and paste its signing secret into `STRIPE_WEBHOOK_SECRET`.
 5. `vercel.json` already schedules the daily Zelle-expiry cron; Vercel sends `CRON_SECRET` as the bearer token.
 

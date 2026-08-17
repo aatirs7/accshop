@@ -544,6 +544,23 @@ export const uploads = pgTable("uploads", {
   createdAt: createdAt(),
 });
 
+// Web push subscriptions (admin PWA). One row per device/browser the admin
+// enabled notifications on; a single admin can have several (phone + desktop).
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("push_subscriptions_user_idx").on(t.userId)],
+);
+
 export const webhookEvents = pgTable("webhook_events", {
   id: id(),
   provider: text("provider").notNull(),
@@ -706,3 +723,13 @@ export const warrantyClaimsRelations = relations(warrantyClaims, ({ one }) => ({
 export const suppliersRelations = relations(suppliers, ({ many }) => ({
   deliverables: many(deliverables),
 }));
+
+export const pushSubscriptionsRelations = relations(
+  pushSubscriptions,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [pushSubscriptions.userId],
+      references: [users.id],
+    }),
+  }),
+);
