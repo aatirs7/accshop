@@ -130,6 +130,11 @@ const testimonialSchema = z.object({
   content: z.string().trim().min(1).max(2000),
   rating: z.coerce.number().int().min(1).max(5).default(5),
   source: z.string().trim().max(100).optional(),
+  createdAt: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? new Date(v) : undefined)),
 });
 
 export async function createTestimonial(
@@ -138,7 +143,11 @@ export async function createTestimonial(
   const admin = await requireAdmin();
   const parsed = testimonialSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: "Name and content are required." };
-  const [row] = await db.insert(testimonials).values(parsed.data).returning();
+  const { createdAt, ...rest } = parsed.data;
+  const [row] = await db
+    .insert(testimonials)
+    .values(createdAt ? { ...rest, createdAt } : rest)
+    .returning();
   await audit({
     actorUserId: admin.id,
     action: "testimonial.created",
@@ -159,7 +168,11 @@ export async function updateTestimonial(
   if (!id) return { ok: false, error: "Missing testimonial." };
   const parsed = testimonialSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: "Name and content are required." };
-  await db.update(testimonials).set(parsed.data).where(eq(testimonials.id, id));
+  const { createdAt, ...rest } = parsed.data;
+  await db
+    .update(testimonials)
+    .set(createdAt ? { ...rest, createdAt } : rest)
+    .where(eq(testimonials.id, id));
   await audit({
     actorUserId: admin.id,
     action: "testimonial.updated",

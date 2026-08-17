@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { formatDate } from "@/lib/format";
 
 function useRun() {
   const [pending, startTransition] = useTransition();
@@ -347,7 +348,7 @@ export function TestimonialForm() {
         setOpen(false);
       }}
     >
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         <div>
           <Label className="text-xs" htmlFor="t-name">Author *</Label>
           <Input id="t-name" name="authorName" required className="mt-1" />
@@ -359,6 +360,10 @@ export function TestimonialForm() {
         <div>
           <Label className="text-xs" htmlFor="t-rating">Rating (1–5)</Label>
           <Input id="t-rating" name="rating" type="number" min={1} max={5} defaultValue={5} className="mt-1" />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="t-date">Date</Label>
+          <Input id="t-date" name="createdAt" type="date" className="mt-1" />
         </div>
       </div>
       <div>
@@ -476,6 +481,7 @@ export interface TestimonialItemData {
   rating: number;
   published: boolean;
   featured: boolean;
+  createdAt: Date;
 }
 
 export function TestimonialAdminItem({
@@ -498,7 +504,7 @@ export function TestimonialAdminItem({
             }}
           >
             <input type="hidden" name="id" value={t.id} />
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-4">
               <div>
                 <Label className="text-xs">Author *</Label>
                 <Input name="authorName" defaultValue={t.authorName} required className="mt-1" />
@@ -510,6 +516,15 @@ export function TestimonialAdminItem({
               <div>
                 <Label className="text-xs">Rating (1–5)</Label>
                 <Input name="rating" type="number" min={1} max={5} defaultValue={t.rating} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Date</Label>
+                <Input
+                  name="createdAt"
+                  type="date"
+                  defaultValue={t.createdAt.toISOString().slice(0, 10)}
+                  className="mt-1"
+                />
               </div>
             </div>
             <div>
@@ -537,6 +552,9 @@ export function TestimonialAdminItem({
                 <span className="text-sm text-muted-foreground">{t.authorHandle}</span>
               )}
               <span className="text-brand-gold">{"★".repeat(t.rating)}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatDate(t.createdAt)}
+              </span>
               {t.published ? (
                 <Badge variant="outline" className="border-brand-success/50 text-brand-success">
                   Published
