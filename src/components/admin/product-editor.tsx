@@ -150,7 +150,7 @@ export function ProductEditor({ product }: { product: EditorProduct }) {
               defaultChecked={product.featured}
               className="accent-[oklch(0.83_0.115_85)]"
             />
-            Featured (homepage carousel)
+            Featured
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input

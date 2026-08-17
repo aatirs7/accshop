@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, testimonials } from "@/lib/db/schema";
 import { socialProof } from "@/lib/db/queries/public";
@@ -10,17 +10,13 @@ import { ProcessSteps } from "@/components/marketing/process-steps";
 import { StatPills } from "@/components/marketing/stat-pills";
 import { BenefitGrid } from "@/components/marketing/benefit-grid";
 import { GuaranteeBanner } from "@/components/marketing/guarantee-banner";
-import { FeaturedCarousel } from "@/components/marketing/featured-carousel";
+import { AccountExamples } from "@/components/marketing/account-examples";
 import { TestimonialsCarousel } from "@/components/marketing/testimonials-carousel";
 
 export default async function HomePage() {
-  const [catalog, featuredProducts, featured, proof] = await Promise.all([
+  const [catalog, featured, proof] = await Promise.all([
     db.query.products.findMany({
       where: eq(products.active, true),
-      orderBy: asc(products.sort),
-    }),
-    db.query.products.findMany({
-      where: and(eq(products.active, true), eq(products.featured, true)),
       orderBy: asc(products.sort),
     }),
     db.query.testimonials.findMany({
@@ -91,21 +87,8 @@ export default async function HomePage() {
 
       <div className="gold-hairline mx-auto max-w-6xl" />
 
-      {/* Featured accounts carousel */}
-      {featuredProducts.length > 0 && (
-        <FeaturedCarousel
-          products={featuredProducts.map((p) => ({
-            id: p.id,
-            slug: p.slug,
-            name: p.name,
-            tierLabel: p.tierLabel,
-            description: p.description,
-            retailPriceCents: p.retailPriceCents,
-            compareAtPriceCents: p.compareAtPriceCents,
-            screenshotUrl: p.screenshotUrl,
-          }))}
-        />
-      )}
+      {/* What an account looks like */}
+      <AccountExamples />
 
       {/* Account benefits */}
       <BenefitGrid />

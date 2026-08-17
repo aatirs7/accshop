@@ -90,6 +90,23 @@ export async function createSupplier(formData: FormData): Promise<ActionResult> 
   return { ok: true };
 }
 
+export async function updateSupplier(formData: FormData): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const supplierId = String(formData.get("supplierId") ?? "");
+  if (!supplierId) return { ok: false, error: "Missing supplier." };
+  const parsed = supplierSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: "Supplier name is required." };
+  await db.update(suppliers).set(parsed.data).where(eq(suppliers.id, supplierId));
+  await audit({
+    actorUserId: admin.id,
+    action: "supplier.updated",
+    entityType: "supplier",
+    entityId: supplierId,
+  });
+  revalidatePath("/admin/suppliers");
+  return { ok: true };
+}
+
 export async function toggleSupplierActive(
   supplierId: string,
   active: boolean,
@@ -127,6 +144,27 @@ export async function createTestimonial(
     action: "testimonial.created",
     entityType: "testimonial",
     entityId: row.id,
+  });
+  revalidatePath("/admin/testimonials");
+  revalidatePath("/testimonials");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function updateTestimonial(
+  formData: FormData,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, error: "Missing testimonial." };
+  const parsed = testimonialSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: "Name and content are required." };
+  await db.update(testimonials).set(parsed.data).where(eq(testimonials.id, id));
+  await audit({
+    actorUserId: admin.id,
+    action: "testimonial.updated",
+    entityType: "testimonial",
+    entityId: id,
   });
   revalidatePath("/admin/testimonials");
   revalidatePath("/testimonials");
