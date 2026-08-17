@@ -1,6 +1,8 @@
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
+import { AdminPwaRegistrar } from "@/components/admin/admin-pwa-registrar";
 import {
   Card,
   CardContent,
@@ -9,7 +11,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export const metadata = { title: "Admin" };
+export const metadata: Metadata = {
+  title: "Admin",
+  manifest: "/admin-manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "AccShop Admin",
+  },
+  icons: {
+    icon: [{ url: "/admin/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [
+      { url: "/admin/apple-icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#06070a",
+};
 
 const nav = [
   { href: "/admin", label: "Overview" },
@@ -36,6 +56,7 @@ export default async function AdminLayout({
   if (session?.user?.role !== "admin") {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
+        <AdminPwaRegistrar />
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <Link
@@ -57,6 +78,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen">
+      <AdminPwaRegistrar />
       <aside className="hidden w-56 shrink-0 border-r border-border/60 bg-sidebar md:block">
         <div className="sticky top-0 p-5">
           <Link
