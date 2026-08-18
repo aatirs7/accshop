@@ -17,7 +17,7 @@ const benefits = [
   {
     icon: "🛡️",
     title: "14-Day Replacement Warranty",
-    body: "Every account is covered for a full month, with a live countdown in your dashboard.",
+    body: "Every account is covered for 14 days, with a live countdown in your dashboard.",
   },
 ];
 
