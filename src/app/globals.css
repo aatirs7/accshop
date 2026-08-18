@@ -156,8 +156,10 @@
   .animate-marquee {
     animation: marquee 40s linear infinite;
   }
-  .animate-marquee:hover {
-    animation-play-state: paused;
+  @media (hover: hover) {
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .animate-marquee {
