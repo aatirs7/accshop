@@ -173,7 +173,7 @@ export function CredentialsReadyEmail(props: {
   dashboardUrl: string;
 }) {
   return (
-    <Shell preview="Your account is ready" heading="Your account is ready 🎉">
+    <Shell preview="Your account is ready" heading="Your account is ready">
       <Text style={styles.text}>
         The credentials for order <strong>{props.orderCode}</strong> are ready
         to view in your secure dashboard. For your security they are never sent
@@ -255,7 +255,7 @@ export function AccountDeliveryEmail(props: {
   return (
     <Shell
       preview="Your TikTok account is ready"
-      heading="Your account is ready 🎉"
+      heading="Your account is ready"
     >
       <Text style={styles.text}>
         Here are the login details for order{" "}

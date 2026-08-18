@@ -170,7 +170,7 @@ export async function markOrderPaid(
   );
 
   await sendPushToAdmins({
-    title: `💰 Sale: ${formatMoney(order.totalCents)}`,
+    title: `Sale: ${formatMoney(order.totalCents)}`,
     body: `${order.orderCode}, ${order.quantity}× ${order.product.name} via ${opts.method}`,
     url: `/admin/orders/${order.orderCode}`,
   });
