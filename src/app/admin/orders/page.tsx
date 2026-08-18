@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminOrdersPage() {
-  const [zelleQueue, allOrders] = await Promise.all([
+  const [zelleQueue, paidOrders, [{ value: failedCount }]] = await Promise.all([
     db.query.orders.findMany({
       where: and(
         eq(orders.paymentMethod, "zelle"),
@@ -27,11 +27,26 @@ export default async function AdminOrdersPage() {
       with: { user: true, product: true },
       orderBy: desc(orders.createdAt),
     }),
+    // Only customers who actually paid — abandoned/cancelled checkouts live
+    // on the separate "failed" page instead of cluttering this list.
     db.query.orders.findMany({
+      where: inArray(orders.paymentStatus, ["paid", "refunded"]),
       with: { user: true, product: true },
       orderBy: desc(orders.createdAt),
       limit: 100,
     }),
+    db
+      .select({ value: count() })
+      .from(orders)
+      .where(
+        or(
+          eq(orders.paymentStatus, "cancelled"),
+          and(
+            eq(orders.paymentStatus, "pending"),
+            eq(orders.paymentMethod, "stripe"),
+          ),
+        ),
+      ),
   ]);
 
   return (
@@ -100,8 +115,14 @@ export default async function AdminOrdersPage() {
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">All orders</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <CardTitle className="text-base">Paid orders</CardTitle>
+          <Link
+            href="/admin/orders/failed"
+            className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+          >
+            Failed / incomplete checkouts ({failedCount})
+          </Link>
         </CardHeader>
         <CardContent>
           <Table>
@@ -110,13 +131,13 @@ export default async function AdminOrdersPage() {
                 <TableHead>Code</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Product</TableHead>
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">Amount paid</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Placed</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allOrders.map((o) => (
+              {paidOrders.map((o) => (
                 <TableRow key={o.id}>
                   <TableCell>
                     <Link
