@@ -182,6 +182,11 @@ export const products = pgTable("products", {
   featured: boolean("featured").notNull().default(false),
   sort: integer("sort").notNull().default(0),
   active: boolean("active").notNull().default(true),
+  // Mirrors this product in Stripe. A new Price is created (Prices are
+  // immutable in Stripe) and set as the product's default_price whenever
+  // retailPriceCents changes; stripeProductId stays stable across price edits.
+  stripeProductId: text("stripe_product_id"),
+  stripePriceId: text("stripe_price_id"),
   createdAt: createdAt(),
 });
 

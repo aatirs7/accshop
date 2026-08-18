@@ -12,6 +12,7 @@ import {
 } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { audit } from "@/lib/audit";
+import { stripeConfigured, syncStripeProduct } from "@/lib/payments/stripe";
 import type { ActionResult } from "./orders";
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -86,19 +87,50 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
   if (!parsed.success) return { ok: false, error: "Check the product fields." };
   const d = parsed.data;
 
+  const current = await db.query.products.findFirst({
+    where: eq(products.id, d.productId),
+  });
+  if (!current) return { ok: false, error: "Product not found." };
+
+  const retailPriceCents = Math.round(d.retailPrice * 100);
+  const active = d.active === "on";
+  let stripeIds: { stripeProductId: string; stripePriceId: string } | null =
+    null;
+  if (
+    stripeConfigured() &&
+    (retailPriceCents !== current.retailPriceCents ||
+      !current.stripeProductId)
+  ) {
+    try {
+      stripeIds = await syncStripeProduct({
+        id: current.id,
+        name: d.name,
+        retailPriceCents,
+        active,
+        stripeProductId: current.stripeProductId,
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        error: `Couldn't update the Stripe price: ${(err as Error).message}`,
+      };
+    }
+  }
+
   const compareAt = dollarsToCents(d.compareAtPrice);
   await db
     .update(products)
     .set({
       name: d.name,
       description: d.description,
-      retailPriceCents: Math.round(d.retailPrice * 100),
+      retailPriceCents,
       costCents: Math.round(d.cost * 100),
       compareAtPriceCents: compareAt,
       stockLabel: d.stockLabel,
       screenshotUrl: d.screenshotUrl || null,
       featured: d.featured === "on",
-      active: d.active === "on",
+      active,
+      ...(stripeIds ?? {}),
     })
     .where(eq(products.id, d.productId));
 

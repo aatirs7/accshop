@@ -58,3 +58,45 @@ export async function createStripeCheckout(order: {
   if (!session.url) throw new Error("Stripe did not return a checkout URL");
   return { redirectUrl: session.url, checkoutSessionId: session.id };
 }
+
+/**
+ * Mirrors a catalog product into Stripe so the Stripe dashboard always has a
+ * matching Product/Price to report and reconcile against. Stripe Prices are
+ * immutable, so a price change creates a new Price and re-points the
+ * product's default_price at it rather than editing one in place; the
+ * Product itself is reused (created once, updated after) so price edits
+ * don't pile up duplicate Products in the dashboard.
+ */
+export async function syncStripeProduct(product: {
+  id: string;
+  name: string;
+  retailPriceCents: number;
+  active: boolean;
+  stripeProductId: string | null;
+}): Promise<{ stripeProductId: string; stripePriceId: string }> {
+  const stripe = getStripe();
+
+  const stripeProductId = product.stripeProductId
+    ? (
+        await stripe.products.update(product.stripeProductId, {
+          name: product.name,
+          active: product.active,
+        })
+      ).id
+    : (
+        await stripe.products.create({
+          name: product.name,
+          active: product.active,
+          metadata: { app_product_id: product.id },
+        })
+      ).id;
+
+  const price = await stripe.prices.create({
+    product: stripeProductId,
+    unit_amount: product.retailPriceCents,
+    currency: "usd",
+  });
+  await stripe.products.update(stripeProductId, { default_price: price.id });
+
+  return { stripeProductId, stripePriceId: price.id };
+}
