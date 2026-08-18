@@ -34,7 +34,7 @@ export default function WarrantyPage() {
             14-day warranty, in plain words
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground text-balance">
-            One month of full coverage from the moment of delivery. Here&apos;s
+            14 days of full coverage from the moment of delivery. Here&apos;s
             exactly what that means.
           </p>
         </div>
