@@ -149,7 +149,7 @@ export async function advanceOrderStage(
         orderCode: order.orderCode,
         dashboardUrl: `${env.APP_URL}/dashboard/orders/${order.orderCode}`,
       }),
-      text: `Your credentials for order ${order.orderCode} are ready in your secure dashboard: ${env.APP_URL}/dashboard/orders/${order.orderCode} (never sent by email).`,
+      text: `Your credentials for order ${order.orderCode} are ready. We'll send them to you by email shortly.`,
     });
   }
   if (to === "delivered") {

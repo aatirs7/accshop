@@ -20,6 +20,7 @@ import {
   AdvanceStageButton,
   AssignSupplierForm,
   AttachCredentialsForm,
+  EmailAccountButton,
 } from "@/components/admin/order-workbench";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,7 +169,10 @@ export default async function AdminOrderDetailPage({
               </PromptActionButton>
             </>
           )}
-          {order.paymentStatus === "paid" && next && (
+          {order.paymentStatus === "paid" && next === "credentials_ready" && (
+            <EmailAccountButton orderId={order.id} />
+          )}
+          {order.paymentStatus === "paid" && next && next !== "credentials_ready" && (
             <AdvanceStageButton
               orderId={order.id}
               to={next}

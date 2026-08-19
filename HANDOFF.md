@@ -58,7 +58,7 @@ Scripts: `npm test` (unit), `npm run typecheck`, `npm run db:generate|migrate|pu
 ## Architecture notes (non-obvious)
 
 - **Dev DB is embedded PGlite** (`./.pglite`); prod is Neon. `@electric-sql/pglite` is in `serverExternalPackages` (next.config.ts) or its WASM fails to load. PGlite is single-process — stop the dev server before running seed/verify scripts.
-- **Credentials** are AES-256-GCM encrypted with AAD = deliverableId (`src/lib/crypto/credentials.ts`). Reveal-once is enforced by an atomic `UPDATE ... WHERE reveal_locked=false RETURNING`. Never emailed — the "ready" email only links to the dashboard. Admin can unlock a re-reveal (audited).
+- **Credentials** are AES-256-GCM encrypted with AAD = deliverableId (`src/lib/crypto/credentials.ts`). Delivery is by email (`emailAccountToCustomer` in `src/actions/admin/credentials.ts`), which decrypts and sends the plaintext to the buyer, then marks the order delivered. A legacy dashboard reveal-once flow (`UPDATE ... WHERE reveal_locked=false RETURNING`) still exists for in-flight orders started before the switch to email delivery; admin can unlock a re-reveal there (audited).
 - **Both payment rails converge on `markOrderPaid()`** (`src/lib/payments/mark-paid.ts`). The Stripe webhook is the sole paid-authority (idempotent via `webhook_events`); Zelle is admin-confirmed. Referral commission accrues only for `source='referral'`, never wholesale partner buys.
 - **Payment layer is an interface** (`src/lib/payments/provider.ts`) so a replacement processor is a one-file swap; all order/margin/commission state lives in our DB, so a Stripe freeze never freezes the business.
 - **Warranty (30-day) is derived** from `deliveredAt`, never stored (`src/lib/orders/status.ts`).

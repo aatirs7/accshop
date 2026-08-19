@@ -9,7 +9,7 @@ import {
   saveAdminNotes,
   type ActionResult,
 } from "@/actions/admin/orders";
-import { attachCredentials } from "@/actions/admin/credentials";
+import { attachCredentials, emailAccountToCustomer } from "@/actions/admin/credentials";
 import type { FulfillmentStatus } from "@/lib/orders/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,29 @@ export function AdvanceStageButton(props: {
       }
     >
       {pending ? "Working…" : `Advance → ${props.label}`}
+    </Button>
+  );
+}
+
+export function EmailAccountButton({ orderId }: { orderId: string }) {
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  return (
+    <Button
+      disabled={pending}
+      onClick={() =>
+        startTransition(async () => {
+          const result = await emailAccountToCustomer(orderId);
+          if (result.ok) {
+            toast.success("Account emailed to customer");
+            router.refresh();
+          } else {
+            toast.error(result.error);
+          }
+        })
+      }
+    >
+      {pending ? "Sending…" : "Email account to customer"}
     </Button>
   );
 }

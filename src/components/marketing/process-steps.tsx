@@ -12,7 +12,7 @@ const steps = [
   {
     n: "03",
     title: "Secure delivery",
-    body: "Credentials are encrypted and delivered through your dashboard, never by email, with our warmup guide.",
+    body: "Credentials are encrypted in storage and delivered straight to your email, along with our warmup guide.",
   },
   {
     n: "04",

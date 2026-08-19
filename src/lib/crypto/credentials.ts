@@ -5,7 +5,7 @@ import { env } from "@/lib/env";
  * AES-256-GCM encryption for delivered account credentials.
  *
  * - Plaintext exists only transiently in server memory (admin attach, customer
- *   reveal). Never stored, logged, or emailed.
+ *   reveal, email delivery). Never stored or logged.
  * - AAD binds each ciphertext to its deliverable row: copying ciphertext
  *   between rows fails authentication.
  * - keyVersion enables rotation: add CREDENTIAL_KEY_V2, re-encrypt, retire V1.

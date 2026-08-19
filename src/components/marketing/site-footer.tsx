@@ -19,6 +19,7 @@ export function SiteFooter() {
             <li><Link className="hover:text-foreground" href="/accounts">Accounts</Link></li>
             <li><Link className="hover:text-foreground" href="/testimonials">Testimonials</Link></li>
             <li><Link className="hover:text-foreground" href="/warranty">Warranty policy</Link></li>
+            <li><Link className="hover:text-foreground" href="/refund-policy">Refund &amp; replacement policy</Link></li>
             <li><Link className="hover:text-foreground" href="/dashboard">My orders</Link></li>
           </ul>
         </div>
@@ -32,7 +33,12 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} ACCSHOP. All rights reserved.
+        <p>© {new Date().getFullYear()} ACCSHOP. All rights reserved.</p>
+        <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <Link className="hover:text-foreground" href="/terms">Terms of Service</Link>
+          <Link className="hover:text-foreground" href="/privacy">Privacy Policy</Link>
+          <Link className="hover:text-foreground" href="/refund-policy">Refund policy</Link>
+        </p>
       </div>
     </footer>
   );
