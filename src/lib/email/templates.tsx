@@ -175,9 +175,8 @@ export function CredentialsReadyEmail(props: {
   return (
     <Shell preview="Your account is ready" heading="Your account is ready">
       <Text style={styles.text}>
-        The credentials for order <strong>{props.orderCode}</strong> are ready
-        to view in your secure dashboard. For your security they are never sent
-        by email.
+        The credentials for order <strong>{props.orderCode}</strong> are ready.
+        We&apos;ll send them to you by email shortly.
       </Text>
       <Text style={styles.text}>
         <strong>Heads up:</strong> credentials are shown once, have a safe
