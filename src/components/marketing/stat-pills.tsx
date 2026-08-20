@@ -1,6 +1,6 @@
 export function StatPills({ accountsSold }: { accountsSold: number }) {
   const pills = [
-    { label: `${accountsSold.toLocaleString()} sold`, icon: "✦" },
+    { label: `${accountsSold.toLocaleString()}+ buyers`, icon: "✦" },
     { label: "100% organic followers", icon: "★" },
     { label: "14-day warranty", icon: "✓" },
   ];
