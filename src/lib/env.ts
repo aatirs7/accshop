@@ -16,10 +16,18 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default("ACCSHOP <onboarding@resend.dev>"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  // Web push (admin "new sale" / "new order" alerts). Both required to send;
-  // generate with `npx web-push generate-vapid-keys`.
-  VAPID_PUBLIC_KEY: z.string().optional(),
-  VAPID_PRIVATE_KEY: z.string().optional(),
+  // Web push (admin "new sale" / "new order" alerts). Defaulted so the
+  // "Enable alerts" button works out of the box without a Vercel env var
+  // step; override with your own pair (`npx web-push generate-vapid-keys`)
+  // if you ever need to invalidate existing subscriptions.
+  VAPID_PUBLIC_KEY: z
+    .string()
+    .default(
+      "BDoSUnC-arWv6R3RdxBJ1m2LF6Q56qx_XdIZdONk3DKakj9ig93B2lWGSbL-DJju2-us6u94rM-phPQNTEO9Pcg",
+    ),
+  VAPID_PRIVATE_KEY: z
+    .string()
+    .default("PRxL_X9Rxg9cQT4yxa7ZHw6OY60MukHuRSkeFHbneLQ"),
   // 32 bytes, base64, encrypts delivered account credentials at rest
   CREDENTIAL_KEY_V1: z.string().min(40),
   CREDENTIAL_KEY_VERSION: z.coerce.number().int().default(1),
