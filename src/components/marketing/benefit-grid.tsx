@@ -7,7 +7,7 @@ const benefits = [
   {
     icon: "🔑",
     title: "Full Account Ownership",
-    body: "Change the login, email, and every recovery detail from day one. It's entirely yours.",
+    body: "Change the password right away. Recovery details unlock after TikTok's 48-hour security hold. It's entirely yours.",
   },
   {
     icon: "🛍️",

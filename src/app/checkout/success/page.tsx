@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { Button } from "@/components/ui/button";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Order status" };
 
@@ -30,6 +31,7 @@ export default async function CheckoutSuccessPage({
           <Button asChild className="mt-6">
             <Link href="/accounts">Back to accounts</Link>
           </Button>
+          <PolicyLinks />
         </div>
       </main>
     );
@@ -62,6 +64,7 @@ export default async function CheckoutSuccessPage({
             </a>
           </p>
         </div>
+        <PolicyLinks />
       </div>
     </main>
   );

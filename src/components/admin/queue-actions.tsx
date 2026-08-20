@@ -20,6 +20,7 @@ import {
   toggleSupplierActive,
   updateSupplier,
   updateTestimonial,
+  uploadTestimonialImage,
 } from "@/actions/admin/catalog";
 import { setTestimonialFlags, deleteTestimonial } from "@/actions/admin/catalog";
 import type { ActionResult } from "@/actions/admin/orders";
@@ -482,6 +483,7 @@ export interface TestimonialItemData {
   published: boolean;
   featured: boolean;
   createdAt: Date;
+  imageUrl: string | null;
 }
 
 export function TestimonialAdminItem({
@@ -545,30 +547,56 @@ export function TestimonialAdminItem({
     <Card>
       <CardContent className="pt-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-2xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium">{t.authorName}</p>
-              {t.authorHandle && (
-                <span className="text-sm text-muted-foreground">{t.authorHandle}</span>
-              )}
-              <span className="text-brand-gold">{"★".repeat(t.rating)}</span>
-              <span className="text-xs text-muted-foreground">
-                {formatDate(t.createdAt)}
-              </span>
-              {t.published ? (
-                <Badge variant="outline" className="border-brand-success/50 text-brand-success">
-                  Published
-                </Badge>
-              ) : (
-                <Badge variant="outline">Hidden</Badge>
-              )}
-              {t.featured && (
-                <Badge variant="outline" className="border-brand-gold/40 text-brand-gold">
-                  Featured
-                </Badge>
-              )}
+          <div className="flex max-w-2xl gap-4">
+            {t.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={t.imageUrl}
+                alt=""
+                className="h-16 w-16 shrink-0 rounded-lg border border-border/60 object-cover"
+              />
+            )}
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium">{t.authorName}</p>
+                {t.authorHandle && (
+                  <span className="text-sm text-muted-foreground">{t.authorHandle}</span>
+                )}
+                <span className="text-brand-gold">{"★".repeat(t.rating)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(t.createdAt)}
+                </span>
+                {t.published ? (
+                  <Badge variant="outline" className="border-brand-success/50 text-brand-success">
+                    Published
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">Hidden</Badge>
+                )}
+                {t.featured && (
+                  <Badge variant="outline" className="border-brand-gold/40 text-brand-gold">
+                    Featured
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{t.content}</p>
+              <form
+                action={(fd) => run(() => uploadTestimonialImage(fd), "Photo uploaded")}
+                className="mt-3 flex flex-wrap items-center gap-2"
+              >
+                <input type="hidden" name="id" value={t.id} />
+                <input
+                  type="file"
+                  name="file"
+                  accept="image/*"
+                  required
+                  className="text-xs file:mr-3 file:rounded-md file:border-0 file:bg-brand-gold file:px-3 file:py-1.5 file:text-[oklch(0.17_0.02_85)]"
+                />
+                <Button type="submit" size="sm" variant="outline" disabled={pending}>
+                  {t.imageUrl ? "Replace photo" : "Add photo"}
+                </Button>
+              </form>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{t.content}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" disabled={pending} onClick={() => setEditing(true)}>

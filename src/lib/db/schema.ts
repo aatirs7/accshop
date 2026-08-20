@@ -491,6 +491,7 @@ export const testimonials = pgTable("testimonials", {
   content: text("content").notNull(),
   rating: integer("rating").notNull().default(5),
   source: text("source"),
+  imageUrl: text("image_url"),
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
   sort: integer("sort").notNull().default(0),

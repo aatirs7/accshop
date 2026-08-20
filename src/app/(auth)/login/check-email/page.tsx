@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Check your email" };
 
@@ -38,6 +39,7 @@ export default function CheckEmailPage() {
           </p>
         </CardContent>
       </Card>
+      <PolicyLinks />
     </main>
   );
 }

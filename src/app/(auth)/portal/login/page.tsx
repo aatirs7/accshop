@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Affiliate & coach login" };
 
@@ -36,6 +37,7 @@ export default function PortalLoginPage() {
           </p>
         </CardContent>
       </Card>
+      <PolicyLinks />
     </main>
   );
 }

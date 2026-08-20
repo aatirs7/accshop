@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth-helpers";
 import { signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Dashboard" };
 
@@ -49,6 +50,7 @@ export default async function DashboardLayout({
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         {children}
+        <PolicyLinks />
       </main>
     </div>
   );

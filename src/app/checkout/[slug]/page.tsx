@@ -12,6 +12,7 @@ import { auth } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm, type PriceTier } from "@/components/checkout/checkout-form";
 import { Badge } from "@/components/ui/badge";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Checkout" };
 
@@ -118,6 +119,7 @@ export default async function CheckoutPage({
           </Link>
           .
         </p>
+        <PolicyLinks />
       </div>
     </main>
   );

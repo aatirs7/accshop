@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { formatDate } from "@/lib/format";
 
 export interface TestimonialData {
   id: string;
@@ -6,6 +7,8 @@ export interface TestimonialData {
   authorHandle: string | null;
   content: string;
   rating: number;
+  createdAt: Date;
+  imageUrl: string | null;
 }
 
 function Stars({ rating }: { rating: number }) {
@@ -24,9 +27,22 @@ function Stars({ rating }: { rating: number }) {
 
 export function TestimonialCard({ t }: { t: TestimonialData }) {
   return (
-    <Card className="h-full border-border/60 bg-card/60">
+    <Card className="h-full overflow-hidden border-border/60 bg-card/60">
+      {t.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={t.imageUrl}
+          alt=""
+          className="h-44 w-full object-cover"
+        />
+      )}
       <CardContent className="flex h-full flex-col gap-4 p-6">
-        <Stars rating={t.rating} />
+        <div className="flex items-center justify-between gap-2">
+          <Stars rating={t.rating} />
+          <span className="text-xs text-muted-foreground">
+            {formatDate(t.createdAt)}
+          </span>
+        </div>
         <p className="flex-1 text-sm leading-relaxed text-foreground/90">
           &ldquo;{t.content}&rdquo;
         </p>

@@ -6,6 +6,7 @@ import { orders } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Pay with Zelle" };
 
@@ -35,6 +36,7 @@ export default async function ZelleInstructionsPage({
           <Button asChild className="mt-6">
             <Link href="/dashboard">Open dashboard</Link>
           </Button>
+          <PolicyLinks />
         </div>
       </main>
     );
@@ -51,6 +53,7 @@ export default async function ZelleInstructionsPage({
           <Button asChild variant="outline" className="mt-6">
             <Link href="/accounts">Start a new order</Link>
           </Button>
+          <PolicyLinks />
         </div>
       </main>
     );
@@ -120,6 +123,7 @@ export default async function ZelleInstructionsPage({
             48 hours.
           </p>
         </div>
+        <PolicyLinks />
       </div>
     </main>
   );

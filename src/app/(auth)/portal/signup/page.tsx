@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Become an affiliate" };
 
@@ -37,6 +38,7 @@ export default function AffiliateSignupPage() {
           </p>
         </CardContent>
       </Card>
+      <PolicyLinks />
     </main>
   );
 }

@@ -8,10 +8,13 @@ import {
   suppliers,
   testimonialSubmissions,
   testimonials,
+  uploads,
 } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { audit } from "@/lib/audit";
 import type { ActionResult } from "./orders";
+
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
 /** Approve a submitted review: copy it into published testimonials. */
 export async function approveSubmission(
@@ -130,6 +133,7 @@ const testimonialSchema = z.object({
   content: z.string().trim().min(1).max(2000),
   rating: z.coerce.number().int().min(1).max(5).default(5),
   source: z.string().trim().max(100).optional(),
+  imageUrl: z.string().trim().max(500).optional(),
   createdAt: z
     .string()
     .trim()
@@ -173,6 +177,47 @@ export async function updateTestimonial(
     .update(testimonials)
     .set(createdAt ? { ...rest, createdAt } : rest)
     .where(eq(testimonials.id, id));
+  await audit({
+    actorUserId: admin.id,
+    action: "testimonial.updated",
+    entityType: "testimonial",
+    entityId: id,
+  });
+  revalidatePath("/admin/testimonials");
+  revalidatePath("/testimonials");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/** Upload a photo attached to a testimonial (e.g. a screenshot of the review). */
+export async function uploadTestimonialImage(
+  formData: FormData,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const file = formData.get("file");
+  if (!id) return { ok: false, error: "Missing testimonial." };
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Choose an image to upload." };
+  }
+  if (!file.type.startsWith("image/")) {
+    return { ok: false, error: "That file isn't an image." };
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { ok: false, error: "Image is too large (max 8MB)." };
+  }
+
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const [upload] = await db
+    .insert(uploads)
+    .values({ data: bytes, contentType: file.type, createdBy: admin.id })
+    .returning();
+
+  await db
+    .update(testimonials)
+    .set({ imageUrl: `/api/uploads/${upload.id}` })
+    .where(eq(testimonials.id, id));
+
   await audit({
     actorUserId: admin.id,
     action: "testimonial.updated",

@@ -11,7 +11,7 @@ const sections = [
   },
   {
     title: "What you're buying",
-    body: "You're purchasing ownership of an established TikTok account with TikTok Shop Affiliate access, sourced from our vetted supplier network. Once credentials are delivered, the account is yours: change the password, recovery email, and every other detail immediately.",
+    body: "You're purchasing ownership of an established TikTok account with TikTok Shop Affiliate access, sourced from our vetted supplier network. Once credentials are delivered, the account is yours: change the password right away. TikTok requires a 48-hour security hold after your first login before the recovery email and other recovery details can be changed, that's a TikTok rule, not ours.",
   },
   {
     title: "Payment",

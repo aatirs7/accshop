@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PolicyLinks } from "@/components/marketing/policy-links";
 
 export const metadata = { title: "Sign in" };
 
@@ -86,6 +87,7 @@ export default async function LoginPage({
           </p>
         </CardContent>
       </Card>
+      <PolicyLinks />
     </main>
   );
 }

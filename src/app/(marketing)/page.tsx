@@ -106,6 +106,8 @@ export default async function HomePage() {
             headline: t.headline,
             content: t.content,
             rating: t.rating,
+            createdAt: t.createdAt,
+            imageUrl: t.imageUrl,
           }))}
         />
       )}
