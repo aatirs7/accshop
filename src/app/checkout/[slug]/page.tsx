@@ -12,6 +12,7 @@ import { auth } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
 import { CheckoutForm, type PriceTier } from "@/components/checkout/checkout-form";
 import { Badge } from "@/components/ui/badge";
+import { SiteFooter } from "@/components/marketing/site-footer";
 
 export const metadata = { title: "Checkout" };
 
@@ -111,14 +112,15 @@ export default async function CheckoutPage({
           />
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Your account details are emailed to you after payment, plus a 14-day
-          replacement warranty. See our{" "}
+          Your account details are emailed to you within 1-5 hours of payment,
+          plus a 14-day replacement warranty. See our{" "}
           <Link href="/warranty" className="underline">
             warranty policy
           </Link>
           .
         </p>
       </div>
+      <SiteFooter />
     </main>
   );
 }

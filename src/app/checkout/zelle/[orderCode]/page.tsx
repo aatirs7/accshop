@@ -6,6 +6,7 @@ import { orders } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/marketing/site-footer";
 
 export const metadata = { title: "Pay with Zelle" };
 
@@ -121,6 +122,7 @@ export default async function ZelleInstructionsPage({
           </p>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }
