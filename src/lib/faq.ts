@@ -26,7 +26,7 @@ export const FAQS: FaqEntry[] = [
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept secure card payments (credit and debit) at checkout. Your account details are emailed to you right after payment clears.",
+      "We accept secure card payments (credit and debit) at checkout. Your account details are emailed to you within 1-5 hours of payment clearing.",
     keywords: ["pay", "payment", "card", "zelle", "crypto", "paypal", "method", "checkout", "stripe", "debit", "credit"],
   },
   {
@@ -51,13 +51,13 @@ export const FAQS: FaqEntry[] = [
   {
     question: "Do I fully own the account?",
     answer:
-      "Yes, 100%. You can change the login, email, password, and every recovery detail from day one. It's entirely yours after delivery.",
+      "Yes, 100%. You can change the password right away. TikTok requires a 48-hour wait after first login before you can update the recovery email and other recovery details, that's TikTok's own security rule. It's entirely yours after delivery.",
     keywords: ["own", "ownership", "mine", "change", "login", "email", "password", "recovery", "control"],
   },
   {
     question: "How are login credentials delivered?",
     answer:
-      "By email. Once your payment is confirmed and the account is ready, we email your username, password, and linked email. Change the password and recovery email right away and save them somewhere safe.",
+      "By email. Once your payment is confirmed and the account is ready, we email your username, password, and linked email. Change the password right away and save it somewhere safe. TikTok won't let you update the recovery email until 48 hours after your first login.",
     keywords: ["credential", "credentials", "login", "delivered", "password", "email", "details", "receive"],
   },
   {

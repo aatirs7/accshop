@@ -148,7 +148,7 @@ export function CheckoutForm(props: {
         <p className="text-sm font-medium">Secure card checkout</p>
         <p className="mt-1 text-xs text-muted-foreground">
           You&apos;ll be taken to our secure card checkout to pay. Your account
-          details are emailed to you right after payment.
+          details are emailed to you within 1-5 hours of payment.
         </p>
       </div>
 
