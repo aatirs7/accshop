@@ -7,7 +7,7 @@ const benefits = [
   {
     icon: "🔑",
     title: "Full Account Ownership",
-    body: "Change the login, email, and every recovery detail from day one. It's entirely yours.",
+    body: "Change the password immediately. TikTok lets you update the recovery email and other recovery details after a 48-hour wait. It's entirely yours.",
   },
   {
     icon: "🛍️",

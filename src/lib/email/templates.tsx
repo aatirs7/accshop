@@ -258,8 +258,9 @@ export function AccountDeliveryEmail(props: {
     >
       <Text style={styles.text}>
         Here are the login details for order{" "}
-        <strong>{props.orderCode}</strong>. Change the password and recovery
-        email right away, and follow your warmup guide before posting.
+        <strong>{props.orderCode}</strong>. Change the password right away.
+        TikTok will let you update the recovery email 48 hours after your
+        first login. Follow your warmup guide before posting.
       </Text>
       {props.accounts.map((acc, i) => (
         <Section
