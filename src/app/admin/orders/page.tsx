@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { and, count, desc, eq, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, notInArray, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
+import { demoUserIds } from "@/lib/db/queries/demo-exclusion";
 import { formatDate, formatMoney } from "@/lib/format";
 import { pipelineStage } from "@/lib/orders/status";
 import { markZellePaid, resendZelleInstructions } from "@/actions/admin/orders";
@@ -18,11 +19,15 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminOrdersPage() {
+  const demoIds = await demoUserIds();
+  const notDemo = demoIds.length ? notInArray(orders.userId, demoIds) : undefined;
+
   const [zelleQueue, paidOrders, [{ value: failedCount }]] = await Promise.all([
     db.query.orders.findMany({
       where: and(
         eq(orders.paymentMethod, "zelle"),
         eq(orders.paymentStatus, "pending"),
+        notDemo,
       ),
       with: { user: true, product: true },
       orderBy: desc(orders.createdAt),
@@ -30,7 +35,7 @@ export default async function AdminOrdersPage() {
     // Only customers who actually paid — abandoned/cancelled checkouts live
     // on the separate "failed" page instead of cluttering this list.
     db.query.orders.findMany({
-      where: inArray(orders.paymentStatus, ["paid", "refunded"]),
+      where: and(inArray(orders.paymentStatus, ["paid", "refunded"]), notDemo),
       with: { user: true, product: true },
       orderBy: desc(orders.createdAt),
       limit: 100,
@@ -39,12 +44,15 @@ export default async function AdminOrdersPage() {
       .select({ value: count() })
       .from(orders)
       .where(
-        or(
-          eq(orders.paymentStatus, "cancelled"),
-          and(
-            eq(orders.paymentStatus, "pending"),
-            eq(orders.paymentMethod, "stripe"),
+        and(
+          or(
+            eq(orders.paymentStatus, "cancelled"),
+            and(
+              eq(orders.paymentStatus, "pending"),
+              eq(orders.paymentMethod, "stripe"),
+            ),
           ),
+          notDemo,
         ),
       ),
   ]);
