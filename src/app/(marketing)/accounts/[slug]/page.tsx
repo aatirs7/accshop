@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { productImages, productVariants, products, testimonials } from "@/lib/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { TestimonialCard } from "@/components/marketing/testimonial-card";
+import { MarqueeRow } from "@/components/marketing/marquee-row";
 import { ProductGallery } from "@/components/marketing/product-gallery";
 import { ProductBuyBox } from "@/components/marketing/product-buy-box";
 
@@ -31,7 +32,6 @@ export default async function ProductPage({
     db.query.testimonials.findMany({
       where: eq(testimonials.published, true),
       orderBy: asc(testimonials.sort),
-      limit: 2,
     }),
   ]);
 
@@ -95,13 +95,27 @@ export default async function ProductPage({
                 </li>
               ))}
             </ul>
-            <div className="mt-10 grid gap-6 sm:grid-cols-2">
-              {quotes.map((t) => (
-                <TestimonialCard key={t.id} t={t} />
-              ))}
-            </div>
           </div>
         </div>
+
+        {quotes.length > 0 && (
+          <div className="mt-16">
+            <h2 className="font-display text-2xl font-medium sm:text-3xl">
+              What buyers are saying
+            </h2>
+            <div className="mt-6">
+              <MarqueeRow
+                items={quotes}
+                keyFor={(t) => t.id}
+                renderItem={(t) => (
+                  <div className="w-[300px] sm:w-[340px]">
+                    <TestimonialCard t={t} />
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
