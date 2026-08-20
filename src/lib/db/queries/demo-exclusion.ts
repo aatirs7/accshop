@@ -14,3 +14,16 @@ export async function demoUserIds() {
     .where(inArray(users.email, DEMO_EMAILS));
   return rows.map((r) => r.id);
 }
+
+// The owner's own real-money test purchases. Unlike DEMO_EMAILS these orders
+// are real and stay visible in the Orders list, they're just excluded from
+// revenue/margin/accounts-sold so testing doesn't skew real numbers.
+const TEST_BUYER_EMAILS = ["aashirsiddiqui13@gmail.com"];
+
+export async function testBuyerUserIds() {
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(inArray(users.email, TEST_BUYER_EMAILS));
+  return rows.map((r) => r.id);
+}
