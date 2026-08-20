@@ -8,14 +8,18 @@ import {
   products,
   users,
 } from "@/lib/db/schema";
-import { demoUserIds } from "@/lib/db/queries/demo-exclusion";
+import { demoUserIds, testBuyerUserIds } from "@/lib/db/queries/demo-exclusion";
 
 const paid = eq(orders.paymentStatus, "paid");
 
-// Seeded demo orders (see scripts/seed.ts) never count as real sales;
-// callers merge this in via `and(...)` alongside `paid`.
+// Seeded demo orders (see scripts/seed.ts) and the owner's own test
+// purchases never count toward real revenue/order numbers shown in the
+// admin panel; callers merge this in via `and(...)` alongside `paid`. Test
+// purchases still show up in the Orders list itself (see admin/orders/page),
+// they're only excluded from these aggregate stats.
 async function excludeDemo() {
-  const ids = await demoUserIds();
+  const [demoIds, testIds] = await Promise.all([demoUserIds(), testBuyerUserIds()]);
+  const ids = [...demoIds, ...testIds];
   return ids.length ? notInArray(orders.userId, ids) : undefined;
 }
 
@@ -118,9 +122,14 @@ export async function commissionSummary() {
 }
 
 export async function partnerVolumes() {
-  const demoIds = await demoUserIds();
-  const notDemoPartner = demoIds.length ? notInArray(partners.userId, demoIds) : undefined;
-  const notDemoOrder = demoIds.length ? notInArray(orders.userId, demoIds) : undefined;
+  const [demoIds, testIds] = await Promise.all([demoUserIds(), testBuyerUserIds()]);
+  const excludedIds = [...demoIds, ...testIds];
+  const notDemoPartner = excludedIds.length
+    ? notInArray(partners.userId, excludedIds)
+    : undefined;
+  const notDemoOrder = excludedIds.length
+    ? notInArray(orders.userId, excludedIds)
+    : undefined;
   return db
     .select({
       partnerId: partners.id,

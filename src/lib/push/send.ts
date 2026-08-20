@@ -2,7 +2,7 @@ import webpush from "web-push";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { pushSubscriptions, users } from "@/lib/db/schema";
-import { adminEmails, env } from "@/lib/env";
+import { env } from "@/lib/env";
 
 const pushConfigured = Boolean(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY);
 
@@ -28,11 +28,14 @@ interface PushPayload {
  */
 export async function sendPushToAdmins(payload: PushPayload): Promise<void> {
   if (!pushConfigured) return;
-  if (adminEmails.length === 0) return;
 
   try {
+    // Same source of truth as every other admin gate (layout, subscribe
+    // route): the `role` column. Matching against ADMIN_EMAILS here instead
+    // used to silently drop admins whose subscription predates, or whose
+    // email isn't formatted exactly like, that env var.
     const admins = await db.query.users.findMany({
-      where: inArray(users.email, adminEmails),
+      where: eq(users.role, "admin"),
     });
     if (admins.length === 0) return;
 
