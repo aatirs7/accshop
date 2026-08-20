@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import type { TestimonialData } from "@/components/marketing/testimonial-card";
+import { formatDate } from "@/lib/format";
 
 export interface CarouselTestimonial extends TestimonialData {
   headline: string | null;
@@ -71,28 +72,45 @@ export function TestimonialsCarousel({
         {testimonials.map((t) => (
           <figure
             key={t.id}
-            className="flex w-[340px] shrink-0 snap-start flex-col rounded-2xl border border-border/60 bg-card/60 p-6"
+            className="flex w-[340px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60"
           >
-            <Stars rating={t.rating} />
-            {t.headline && (
-              <figcaption className="mt-3 font-display text-lg font-semibold">
-                {t.headline}
-              </figcaption>
+            {t.imageUrl && (
+              <div className="aspect-video w-full overflow-hidden bg-brand-raised">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={t.imageUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </div>
             )}
-            <blockquote className="mt-2 flex-1 text-sm leading-relaxed text-foreground/90">
-              &ldquo;{t.content}&rdquo;
-            </blockquote>
-            <div className="mt-5 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-gold/15 text-sm font-semibold text-brand-gold">
-                {initials(t.authorName)}
-              </span>
-              <div>
-                <p className="text-sm font-semibold">{t.authorName}</p>
-                {t.authorHandle && (
-                  <p className="text-xs text-muted-foreground">
-                    {t.authorHandle}
-                  </p>
-                )}
+            <div className="flex flex-1 flex-col p-6">
+              <Stars rating={t.rating} />
+              {t.headline && (
+                <figcaption className="mt-3 font-display text-lg font-semibold">
+                  {t.headline}
+                </figcaption>
+              )}
+              <blockquote className="mt-2 flex-1 text-sm leading-relaxed text-foreground/90">
+                &ldquo;{t.content}&rdquo;
+              </blockquote>
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-gold/15 text-sm font-semibold text-brand-gold">
+                    {initials(t.authorName)}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold">{t.authorName}</p>
+                    {t.authorHandle && (
+                      <p className="text-xs text-muted-foreground">
+                        {t.authorHandle}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <p className="shrink-0 text-xs text-muted-foreground">
+                  {formatDate(t.createdAt)}
+                </p>
               </div>
             </div>
           </figure>
