@@ -29,7 +29,13 @@ const checkoutSchema = z.object({
   ref: z.string().optional(),
   variantId: z.string().optional(),
   referralCode: z.string().trim().optional(),
+  promoCode: z.string().trim().optional(),
 });
+
+// Static, hand-issued promo codes (separate from the per-user email-capture
+// discounts in `emailCaptures`). Amount is capped so a total never goes
+// below $1.
+const PROMO_CODES: Record<string, number> = { THIRTY: 3000 };
 
 export type CheckoutResult = { ok: false; error: string };
 
@@ -41,7 +47,8 @@ export async function startCheckout(
   if (!parsed.success) {
     return { ok: false, error: "Please check your email and quantity." };
   }
-  const { productSlug, quantity, ref, variantId, referralCode } = parsed.data;
+  const { productSlug, quantity, ref, variantId, referralCode, promoCode } =
+    parsed.data;
 
   if (!stripeConfigured()) {
     return {
@@ -132,7 +139,15 @@ export async function startCheckout(
     if (v) variant = { id: v.id, label: v.label, priceDeltaCents: v.priceDeltaCents };
   }
   const unitPriceCents = price.unitPriceCents + (variant?.priceDeltaCents ?? 0);
-  const totalCents = unitPriceCents * quantity;
+  const subtotalCents = unitPriceCents * quantity;
+
+  const promoInput = (promoCode ?? "").trim().toUpperCase();
+  const promoValue = promoInput ? PROMO_CODES[promoInput] : undefined;
+  const discountCents = promoValue
+    ? Math.min(promoValue, subtotalCents - 100)
+    : 0;
+  const appliedPromoCode = discountCents > 0 ? promoInput : null;
+  const totalCents = subtotalCents - discountCents;
 
   let order;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -150,6 +165,8 @@ export async function startCheckout(
           unitPriceCents,
           variantId: variant?.id ?? null,
           variantLabel: variant?.label ?? null,
+          discountCode: appliedPromoCode,
+          discountCents,
           totalCents,
           paymentMethod: "stripe",
           source,
@@ -173,6 +190,8 @@ export async function startCheckout(
       totalCents,
       variant: variant?.label ?? null,
       referralCode: attributedCode,
+      promoCode: appliedPromoCode,
+      discountCents,
     },
   });
 

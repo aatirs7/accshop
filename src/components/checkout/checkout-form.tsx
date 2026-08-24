@@ -31,6 +31,7 @@ export function CheckoutForm(props: {
 }) {
   const [quantity, setQuantity] = useState(1);
   const [variantId, setVariantId] = useState(props.initialVariantId ?? "");
+  const [promoCode, setPromoCode] = useState("");
   const [state, action, pending] = useActionState<CheckoutResult | null, FormData>(
     startCheckout,
     null,
@@ -46,6 +47,11 @@ export function CheckoutForm(props: {
   const variant = props.variants.find((v) => v.id === variantId);
   const unitCents = baseUnit + (variant?.priceDeltaCents ?? 0);
   const subtotal = unitCents * quantity;
+
+  // Preview only, mirrors the server-side check in startCheckout.
+  const promoApplied = promoCode.trim().toUpperCase() === "THIRTY";
+  const discount = promoApplied ? Math.min(3000, subtotal - 100) : 0;
+  const total = subtotal - discount;
 
   const nextTier = props.partnerTiers
     .filter((t) => t.minQty > quantity)
@@ -144,6 +150,23 @@ export function CheckoutForm(props: {
         />
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="promoCode">Promo code (optional)</Label>
+        <Input
+          id="promoCode"
+          name="promoCode"
+          value={promoCode}
+          onChange={(e) => setPromoCode(e.target.value)}
+          placeholder="Have a promo code? Enter it here"
+          className="max-w-[260px] uppercase"
+        />
+        {promoApplied && (
+          <p className="text-xs text-brand-gold">
+            {formatMoney(discount)} off applied.
+          </p>
+        )}
+      </div>
+
       <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4">
         <p className="text-sm font-medium">Secure card checkout</p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -152,13 +175,31 @@ export function CheckoutForm(props: {
         </p>
       </div>
 
-      <div className="flex items-center justify-between border-t border-border/60 pt-4">
-        <span className="text-sm text-muted-foreground">
-          {quantity} × {formatMoney(unitCents)}
-        </span>
-        <span className="font-display text-3xl text-brand-gold">
-          {formatMoney(subtotal)}
-        </span>
+      <div className="space-y-1 border-t border-border/60 pt-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            {quantity} × {formatMoney(unitCents)}
+          </span>
+          <span
+            className={
+              promoApplied
+                ? "text-lg text-muted-foreground line-through"
+                : "font-display text-3xl text-brand-gold"
+            }
+          >
+            {formatMoney(subtotal)}
+          </span>
+        </div>
+        {promoApplied && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              Promo THIRTY
+            </span>
+            <span className="font-display text-3xl text-brand-gold">
+              {formatMoney(total)}
+            </span>
+          </div>
+        )}
       </div>
 
       {state && !state.ok && (
