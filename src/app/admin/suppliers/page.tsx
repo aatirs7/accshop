@@ -1,6 +1,7 @@
 import { asc, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { deliverables, suppliers } from "@/lib/db/schema";
+import { accountStock, deliverables, suppliers } from "@/lib/db/schema";
+import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { SupplierForm, SupplierRow } from "@/components/admin/queue-actions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,9 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import Link from "next/link";
 
 export default async function AdminSuppliersPage() {
-  const [supplierRows, stats] = await Promise.all([
+  const [supplierRows, stats, stockStats] = await Promise.all([
     db.query.suppliers.findMany({ orderBy: asc(suppliers.name) }),
     db
       .select({
@@ -25,8 +27,18 @@ export default async function AdminSuppliersPage() {
       .from(deliverables)
       .where(sql`${deliverables.supplierId} is not null`)
       .groupBy(deliverables.supplierId),
+    db
+      .select({
+        supplierId: accountStock.supplierId,
+        count: sql<number>`count(*)`,
+      })
+      .from(accountStock)
+      .groupBy(accountStock.supplierId),
   ]);
   const bySupplier = new Map(stats.map((s) => [s.supplierId, s]));
+  const stockBySupplier = new Map(
+    stockStats.map((s) => [s.supplierId, Number(s.count)]),
+  );
 
   return (
     <div className="space-y-6">
@@ -34,7 +46,12 @@ export default async function AdminSuppliersPage() {
         <div>
           <h1 className="font-display text-3xl font-medium">Suppliers</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Who fulfilled what, at what cost.
+            Who fulfilled what, at what cost. Share a supplier&apos;s submit
+            link so they can drop off accounts, then pull them from{" "}
+            <Link href="/admin/stock" className="underline">
+              Account stock
+            </Link>
+            .
           </p>
         </div>
         <SupplierForm />
@@ -49,6 +66,7 @@ export default async function AdminSuppliersPage() {
                 <TableHead className="text-right">Accounts fulfilled</TableHead>
                 <TableHead className="text-right">Avg cost</TableHead>
                 <TableHead className="text-right">Total paid</TableHead>
+                <TableHead className="text-right">Accounts waiting</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -73,6 +91,8 @@ export default async function AdminSuppliersPage() {
                     fulfilled={fulfilled}
                     avgCostLabel={avgCostLabel}
                     totalPaidLabel={totalPaidLabel}
+                    appUrl={env.APP_URL}
+                    stockCount={stockBySupplier.get(s.id) ?? 0}
                   />
                 );
               })}

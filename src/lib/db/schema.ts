@@ -227,8 +227,32 @@ export const suppliers = pgTable("suppliers", {
   defaultCostCents: integer("default_cost_cents"),
   notes: text("notes"),
   active: boolean("active").notNull().default(true),
+  // Lets the supplier submit accounts through a no-login link
+  // (/supplier/[submitToken]) instead of needing admin access.
+  submitToken: text("submit_token").unique(),
   createdAt: createdAt(),
 });
+
+// Accounts a supplier has handed over, held here until an admin pulls one to
+// fulfill a paid order. Encrypted the same way as delivered `credentials`.
+// Admin deletes the row once its details have been copied over to a customer.
+export const accountStock = pgTable(
+  "account_stock",
+  {
+    id: id(),
+    supplierId: text("supplier_id")
+      .notNull()
+      .references(() => suppliers.id, { onDelete: "cascade" }),
+    ciphertext: bytea("ciphertext").notNull(),
+    iv: bytea("iv").notNull(),
+    authTag: bytea("auth_tag").notNull(),
+    keyVersion: integer("key_version").notNull().default(1),
+    // last 4 chars of the username, for admin list display without decryption
+    fingerprint: text("fingerprint"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("account_stock_supplier_idx").on(t.supplierId)],
+);
 
 // ---------------------------------------------------------------------------
 // Partners
@@ -728,6 +752,14 @@ export const warrantyClaimsRelations = relations(warrantyClaims, ({ one }) => ({
 
 export const suppliersRelations = relations(suppliers, ({ many }) => ({
   deliverables: many(deliverables),
+  accountStock: many(accountStock),
+}));
+
+export const accountStockRelations = relations(accountStock, ({ one }) => ({
+  supplier: one(suppliers, {
+    fields: [accountStock.supplierId],
+    references: [suppliers.id],
+  }),
 }));
 
 export const pushSubscriptionsRelations = relations(

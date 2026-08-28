@@ -21,6 +21,7 @@ import {
   updateSupplier,
   updateTestimonial,
 } from "@/actions/admin/catalog";
+import { generateSupplierLink } from "@/actions/admin/stock";
 import { setTestimonialFlags, deleteTestimonial } from "@/actions/admin/catalog";
 import type { ActionResult } from "@/actions/admin/orders";
 import { ActionButton } from "@/components/admin/action-button";
@@ -395,6 +396,7 @@ export interface SupplierRowData {
   defaultCostCents: number | null;
   notes: string | null;
   active: boolean;
+  submitToken: string | null;
 }
 
 export function SupplierRow({
@@ -402,19 +404,28 @@ export function SupplierRow({
   fulfilled,
   avgCostLabel,
   totalPaidLabel,
+  appUrl,
+  stockCount,
 }: {
   supplier: SupplierRowData;
   fulfilled: number;
   avgCostLabel: string;
   totalPaidLabel: string;
+  appUrl: string;
+  stockCount: number;
 }) {
   const { pending, run } = useRun();
   const [editing, setEditing] = useState(false);
 
+  const copyLink = (token: string) => {
+    navigator.clipboard.writeText(`${appUrl}/supplier/${token}`);
+    toast.success("Link copied");
+  };
+
   if (editing) {
     return (
       <TableRow>
-        <TableCell colSpan={7}>
+        <TableCell colSpan={8}>
           <form
             className="space-y-3 py-2"
             action={(fd) => {
@@ -463,14 +474,31 @@ export function SupplierRow({
       <TableCell className="text-right">{fulfilled}</TableCell>
       <TableCell className="text-right">{avgCostLabel}</TableCell>
       <TableCell className="text-right">{totalPaidLabel}</TableCell>
+      <TableCell className="text-right">{stockCount}</TableCell>
       <TableCell>
         <Badge variant="outline">{supplier.active ? "Active" : "Inactive"}</Badge>
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
             Edit
           </Button>
+          {supplier.submitToken ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyLink(supplier.submitToken!)}
+            >
+              Copy submit link
+            </Button>
+          ) : (
+            <ActionButton
+              action={generateSupplierLink.bind(null, supplier.id)}
+              successText="Link created"
+            >
+              Create submit link
+            </ActionButton>
+          )}
           <ActionButton
             action={toggleSupplierActive.bind(null, supplier.id, !supplier.active)}
             successText={supplier.active ? "Deactivated" : "Activated"}

@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import Link from "next/link";
 import { startCheckout, type CheckoutResult } from "@/actions/checkout";
 import { formatMoney } from "@/lib/format";
+import { PROMO_CODES } from "@/lib/promo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +34,7 @@ export function CheckoutForm(props: {
   const [quantity, setQuantity] = useState(1);
   const [variantId, setVariantId] = useState(props.initialVariantId ?? "");
   const [promoCode, setPromoCode] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [state, action, pending] = useActionState<CheckoutResult | null, FormData>(
     startCheckout,
     null,
@@ -49,8 +52,10 @@ export function CheckoutForm(props: {
   const subtotal = unitCents * quantity;
 
   // Preview only, mirrors the server-side check in startCheckout.
-  const promoApplied = promoCode.trim().toUpperCase() === "THIRTY";
-  const discount = promoApplied ? Math.min(3000, subtotal - 100) : 0;
+  const appliedPromoCode = promoCode.trim().toUpperCase();
+  const promoValue = PROMO_CODES[appliedPromoCode];
+  const promoApplied = Boolean(promoValue);
+  const discount = promoApplied ? Math.min(promoValue, subtotal - 100) : 0;
   const total = subtotal - discount;
 
   const nextTier = props.partnerTiers
@@ -167,12 +172,49 @@ export function CheckoutForm(props: {
         )}
       </div>
 
-      <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4">
+      <div className="space-y-3 rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4">
         <p className="text-sm font-medium">Secure card checkout</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          You&apos;ll be taken to our secure card checkout to pay. Your account
-          details are emailed to you within 1-5 hours of payment.
-        </p>
+        <ul className="space-y-1.5 text-xs text-muted-foreground">
+          <li>
+            <span className="font-medium text-foreground">
+              Estimated delivery:
+            </span>{" "}
+            your account details are emailed to you within 1-5 hours of
+            payment.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">
+              Replacement-first warranty:
+            </span>{" "}
+            covered for 14 days from delivery — if there&apos;s a problem, we
+            replace the account.
+          </li>
+        </ul>
+        <label className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            name="agreesToPolicies"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            required
+            className="mt-0.5 accent-[oklch(0.83_0.115_85)]"
+          />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" target="_blank" className="underline">
+              Terms of Service
+            </Link>
+            ,{" "}
+            <Link href="/privacy" target="_blank" className="underline">
+              Privacy Policy
+            </Link>
+            , and{" "}
+            <Link href="/refund-policy" target="_blank" className="underline">
+              Refund &amp; Replacement Policy
+            </Link>
+            .
+          </span>
+        </label>
       </div>
 
       <div className="space-y-1 border-t border-border/60 pt-4">
@@ -193,7 +235,7 @@ export function CheckoutForm(props: {
         {promoApplied && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              Promo THIRTY
+              Promo {appliedPromoCode}
             </span>
             <span className="font-display text-3xl text-brand-gold">
               {formatMoney(total)}
@@ -206,7 +248,12 @@ export function CheckoutForm(props: {
         <p className="text-sm text-destructive">{state.error}</p>
       )}
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
+      <Button
+        type="submit"
+        size="lg"
+        disabled={pending || !agreed}
+        className="w-full"
+      >
         {pending ? "Preparing your order…" : "Continue to secure checkout"}
       </Button>
     </form>

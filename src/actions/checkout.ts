@@ -20,6 +20,7 @@ import { stripeConfigured } from "@/lib/payments/stripe";
 import { audit } from "@/lib/audit";
 import { formatMoney } from "@/lib/format";
 import { sendPushToAdmins } from "@/lib/push/send";
+import { PROMO_CODES } from "@/lib/promo";
 
 const checkoutSchema = z.object({
   productSlug: z.string().min(1),
@@ -30,12 +31,8 @@ const checkoutSchema = z.object({
   variantId: z.string().optional(),
   referralCode: z.string().trim().optional(),
   promoCode: z.string().trim().optional(),
+  agreesToPolicies: z.literal("on"),
 });
-
-// Static, hand-issued promo codes (separate from the per-user email-capture
-// discounts in `emailCaptures`). Amount is capped so a total never goes
-// below $1.
-const PROMO_CODES: Record<string, number> = { THIRTY: 3000 };
 
 export type CheckoutResult = { ok: false; error: string };
 
@@ -45,7 +42,15 @@ export async function startCheckout(
 ): Promise<CheckoutResult> {
   const parsed = checkoutSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { ok: false, error: "Please check your email and quantity." };
+    const missedAgreement = parsed.error.issues.some(
+      (i) => i.path[0] === "agreesToPolicies",
+    );
+    return {
+      ok: false,
+      error: missedAgreement
+        ? "Please agree to the Terms, Privacy Policy, and Refund & Replacement Policy to continue."
+        : "Please check your email and quantity.",
+    };
   }
   const { productSlug, quantity, ref, variantId, referralCode, promoCode } =
     parsed.data;
