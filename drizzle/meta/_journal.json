@@ -57,6 +57,13 @@
       "when": 1787200000000,
       "tag": "0007_add_testimonial_image",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787956004314,
+      "tag": "0008_add_supplier_stock_accounts",
+      "breakpoints": true
     }
   ]
 }

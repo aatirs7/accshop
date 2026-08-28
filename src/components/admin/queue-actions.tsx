@@ -16,7 +16,9 @@ import {
   approveSubmission,
   createSupplier,
   createTestimonial,
+  deleteStockAccount,
   rejectSubmission,
+  resetSupplierAccessLink,
   toggleSupplierActive,
   updateSupplier,
   updateTestimonial,
@@ -24,6 +26,7 @@ import {
 import { setTestimonialFlags, deleteTestimonial } from "@/actions/admin/catalog";
 import type { ActionResult } from "@/actions/admin/orders";
 import { ActionButton } from "@/components/admin/action-button";
+import { CopyField } from "@/components/dashboard/copy-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -402,14 +405,18 @@ export function SupplierRow({
   fulfilled,
   avgCostLabel,
   totalPaidLabel,
+  accessUrl,
 }: {
   supplier: SupplierRowData;
   fulfilled: number;
   avgCostLabel: string;
   totalPaidLabel: string;
+  /** Full URL to this supplier's "add accounts" page, or null if none generated yet. */
+  accessUrl: string | null;
 }) {
   const { pending, run } = useRun();
   const [editing, setEditing] = useState(false);
+  const [showLink, setShowLink] = useState(false);
 
   if (editing) {
     return (
@@ -457,29 +464,58 @@ export function SupplierRow({
   }
 
   return (
-    <TableRow>
-      <TableCell className="font-medium">{supplier.name}</TableCell>
-      <TableCell className="text-muted-foreground">{supplier.contactHandle ?? "-"}</TableCell>
-      <TableCell className="text-right">{fulfilled}</TableCell>
-      <TableCell className="text-right">{avgCostLabel}</TableCell>
-      <TableCell className="text-right">{totalPaidLabel}</TableCell>
-      <TableCell>
-        <Badge variant="outline">{supplier.active ? "Active" : "Inactive"}</Badge>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-            Edit
-          </Button>
-          <ActionButton
-            action={toggleSupplierActive.bind(null, supplier.id, !supplier.active)}
-            successText={supplier.active ? "Deactivated" : "Activated"}
-          >
-            {supplier.active ? "Deactivate" : "Activate"}
-          </ActionButton>
-        </div>
-      </TableCell>
-    </TableRow>
+    <>
+      <TableRow>
+        <TableCell className="font-medium">{supplier.name}</TableCell>
+        <TableCell className="text-muted-foreground">{supplier.contactHandle ?? "-"}</TableCell>
+        <TableCell className="text-right">{fulfilled}</TableCell>
+        <TableCell className="text-right">{avgCostLabel}</TableCell>
+        <TableCell className="text-right">{totalPaidLabel}</TableCell>
+        <TableCell>
+          <Badge variant="outline">{supplier.active ? "Active" : "Inactive"}</Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowLink((v) => !v)}>
+              {showLink ? "Hide link" : "Accounts link"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+            <ActionButton
+              action={toggleSupplierActive.bind(null, supplier.id, !supplier.active)}
+              successText={supplier.active ? "Deactivated" : "Activated"}
+            >
+              {supplier.active ? "Deactivate" : "Activate"}
+            </ActionButton>
+          </div>
+        </TableCell>
+      </TableRow>
+      {showLink && (
+        <TableRow>
+          <TableCell colSpan={7}>
+            <div className="py-2">
+              {accessUrl ? (
+                <CopyField label="Send this link to your supplier to add accounts" value={accessUrl} />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No accounts link yet.
+                </p>
+              )}
+              <div className="mt-2">
+                <ActionButton
+                  variant="ghost"
+                  action={() => resetSupplierAccessLink(supplier.id)}
+                  successText="Link ready"
+                >
+                  {accessUrl ? "Generate a new link" : "Generate link"}
+                </ActionButton>
+              </div>
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 }
 
@@ -644,5 +680,45 @@ export function TestimonialAdminItem({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+export function StockAccountRow({
+  id,
+  productName,
+  supplierName,
+  fingerprint,
+  addedLabel,
+  used,
+}: {
+  id: string;
+  productName: string;
+  supplierName: string;
+  fingerprint: string | null;
+  addedLabel: string;
+  used: boolean;
+}) {
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{productName}</TableCell>
+      <TableCell className="text-muted-foreground">{supplierName}</TableCell>
+      <TableCell className="text-muted-foreground">{fingerprint ?? "-"}</TableCell>
+      <TableCell className="text-muted-foreground">{addedLabel}</TableCell>
+      <TableCell>
+        <Badge variant="outline">{used ? "Assigned" : "In stock"}</Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        {!used && (
+          <ActionButton
+            action={deleteStockAccount.bind(null, id)}
+            variant="destructive"
+            confirmText="Remove this account from stock?"
+            successText="Removed"
+          >
+            Delete
+          </ActionButton>
+        )}
+      </TableCell>
+    </TableRow>
   );
 }
