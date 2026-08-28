@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { startCheckout, type CheckoutResult } from "@/actions/checkout";
 import { formatMoney } from "@/lib/format";
+import { PROMO_CODES } from "@/lib/promo-codes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,8 +50,10 @@ export function CheckoutForm(props: {
   const subtotal = unitCents * quantity;
 
   // Preview only, mirrors the server-side check in startCheckout.
-  const promoApplied = promoCode.trim().toUpperCase() === "THIRTY";
-  const discount = promoApplied ? Math.min(3000, subtotal - 100) : 0;
+  const appliedCode = promoCode.trim().toUpperCase();
+  const promoValue = PROMO_CODES[appliedCode];
+  const promoApplied = Boolean(promoValue);
+  const discount = promoApplied ? Math.min(promoValue, subtotal - 100) : 0;
   const total = subtotal - discount;
 
   const nextTier = props.partnerTiers
@@ -193,7 +196,7 @@ export function CheckoutForm(props: {
         {promoApplied && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              Promo THIRTY
+              Promo {appliedCode}
             </span>
             <span className="font-display text-3xl text-brand-gold">
               {formatMoney(total)}

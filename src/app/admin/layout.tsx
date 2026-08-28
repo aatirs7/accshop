@@ -44,6 +44,7 @@ const nav = [
   { href: "/admin/inquiries", label: "Inquiries" },
   { href: "/admin/claims", label: "Claims" },
   { href: "/admin/suppliers", label: "Suppliers" },
+  { href: "/admin/inventory", label: "Inventory" },
   { href: "/admin/testimonials", label: "Testimonials" },
 ];
 

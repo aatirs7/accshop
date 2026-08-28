@@ -12,6 +12,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
 import { ulid } from "ulid";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -227,8 +228,43 @@ export const suppliers = pgTable("suppliers", {
   defaultCostCents: integer("default_cost_cents"),
   notes: text("notes"),
   active: boolean("active").notNull().default(true),
+  // Lets this supplier open their private "add accounts" page without an
+  // admin login; null until an access link is generated for them.
+  accessToken: text("access_token")
+    .unique()
+    .$defaultFn(() => randomBytes(20).toString("hex")),
   createdAt: createdAt(),
 });
+
+// Accounts a supplier has loaded in, waiting to be handed to a buyer. One row
+// per account; `usedByDeliverableId` is set once it's assigned to an order.
+export const stockAccounts = pgTable(
+  "stock_accounts",
+  {
+    id: id(),
+    supplierId: text("supplier_id")
+      .notNull()
+      .references(() => suppliers.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    ciphertext: bytea("ciphertext").notNull(),
+    iv: bytea("iv").notNull(),
+    authTag: bytea("auth_tag").notNull(),
+    keyVersion: integer("key_version").notNull().default(1),
+    // last 4 chars of the login identifier, for admin UI display without decryption
+    fingerprint: text("fingerprint"),
+    used: boolean("used").notNull().default(false),
+    usedByDeliverableId: text("used_by_deliverable_id").references(
+      () => deliverables.id,
+    ),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("stock_accounts_product_idx").on(t.productId, t.used),
+    index("stock_accounts_supplier_idx").on(t.supplierId),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // Partners
@@ -615,6 +651,7 @@ export const productsRelations = relations(products, ({ many }) => ({
   orders: many(orders),
   images: many(productImages),
   variants: many(productVariants),
+  stockAccounts: many(stockAccounts),
 }));
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
@@ -728,6 +765,18 @@ export const warrantyClaimsRelations = relations(warrantyClaims, ({ one }) => ({
 
 export const suppliersRelations = relations(suppliers, ({ many }) => ({
   deliverables: many(deliverables),
+  stockAccounts: many(stockAccounts),
+}));
+
+export const stockAccountsRelations = relations(stockAccounts, ({ one }) => ({
+  supplier: one(suppliers, {
+    fields: [stockAccounts.supplierId],
+    references: [suppliers.id],
+  }),
+  product: one(products, {
+    fields: [stockAccounts.productId],
+    references: [products.id],
+  }),
 }));
 
 export const pushSubscriptionsRelations = relations(

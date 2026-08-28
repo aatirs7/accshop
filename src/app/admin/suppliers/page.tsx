@@ -2,6 +2,7 @@ import { asc, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { deliverables, suppliers } from "@/lib/db/schema";
 import { formatMoney } from "@/lib/format";
+import { env } from "@/lib/env";
 import { SupplierForm, SupplierRow } from "@/components/admin/queue-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -73,6 +74,9 @@ export default async function AdminSuppliersPage() {
                     fulfilled={fulfilled}
                     avgCostLabel={avgCostLabel}
                     totalPaidLabel={totalPaidLabel}
+                    accessUrl={
+                      s.accessToken ? `${env.APP_URL}/supplier/${s.accessToken}` : null
+                    }
                   />
                 );
               })}

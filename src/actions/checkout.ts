@@ -20,6 +20,7 @@ import { stripeConfigured } from "@/lib/payments/stripe";
 import { audit } from "@/lib/audit";
 import { formatMoney } from "@/lib/format";
 import { sendPushToAdmins } from "@/lib/push/send";
+import { PROMO_CODES } from "@/lib/promo-codes";
 
 const checkoutSchema = z.object({
   productSlug: z.string().min(1),
@@ -31,11 +32,6 @@ const checkoutSchema = z.object({
   referralCode: z.string().trim().optional(),
   promoCode: z.string().trim().optional(),
 });
-
-// Static, hand-issued promo codes (separate from the per-user email-capture
-// discounts in `emailCaptures`). Amount is capped so a total never goes
-// below $1.
-const PROMO_CODES: Record<string, number> = { THIRTY: 3000 };
 
 export type CheckoutResult = { ok: false; error: string };
 

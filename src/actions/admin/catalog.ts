@@ -1,10 +1,12 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
+  stockAccounts,
   suppliers,
   testimonialSubmissions,
   testimonials,
@@ -145,6 +147,45 @@ export async function toggleSupplierActive(
     metadata: { active },
   });
   revalidatePath("/admin/suppliers");
+  return { ok: true };
+}
+
+/** (Re)generates the private link a supplier uses to load accounts in. */
+export async function resetSupplierAccessLink(
+  supplierId: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const token = randomBytes(20).toString("hex");
+  await db
+    .update(suppliers)
+    .set({ accessToken: token })
+    .where(eq(suppliers.id, supplierId));
+  await audit({
+    actorUserId: admin.id,
+    action: "supplier.access_link_reset",
+    entityType: "supplier",
+    entityId: supplierId,
+  });
+  revalidatePath("/admin/suppliers");
+  return { ok: true };
+}
+
+/** Removes a bad/duplicate stock entry a supplier loaded in by mistake. */
+export async function deleteStockAccount(stockId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const row = await db.query.stockAccounts.findFirst({
+    where: eq(stockAccounts.id, stockId),
+  });
+  if (!row) return { ok: false, error: "Not found." };
+  if (row.used) return { ok: false, error: "Already assigned to an order." };
+  await db.delete(stockAccounts).where(eq(stockAccounts.id, stockId));
+  await audit({
+    actorUserId: admin.id,
+    action: "stock_account.deleted",
+    entityType: "stock_account",
+    entityId: stockId,
+  });
+  revalidatePath("/admin/inventory");
   return { ok: true };
 }
 
