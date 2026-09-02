@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   addPricingRule,
   approveApplication,
+  createReferralPartner,
   markCommissionsPaid,
   rejectApplication,
   updateInquiryStatus,
@@ -298,6 +299,60 @@ export function SubmissionActions({ submissionId }: { submissionId: string }) {
         Reject
       </Button>
     </div>
+  );
+}
+
+export function ReferralPartnerForm() {
+  const { pending, run } = useRun();
+  const [open, setOpen] = useState(false);
+  if (!open) return <Button onClick={() => setOpen(true)}>Add referral code</Button>;
+  return (
+    <form
+      className="space-y-3 rounded-lg border border-border/60 p-4"
+      action={(fd) => {
+        run(() => createReferralPartner(fd), "Referral code created");
+        setOpen(false);
+      }}
+    >
+      <div className="grid gap-3 sm:grid-cols-4">
+        <div>
+          <Label className="text-xs" htmlFor="p-name">Name *</Label>
+          <Input id="p-name" name="businessName" required className="mt-1" />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="p-email">Email *</Label>
+          <Input id="p-email" name="email" type="email" required className="mt-1" />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="p-code">Referral code *</Label>
+          <Input
+            id="p-code"
+            name="referralCode"
+            required
+            className="mt-1 uppercase"
+            placeholder="SIEBECKER"
+          />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="p-pct">Commission %</Label>
+          <Input
+            id="p-pct"
+            name="commissionPct"
+            type="number"
+            min={0}
+            max={50}
+            step="0.1"
+            required
+            defaultValue={15}
+            className="mt-1"
+          />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={pending}>Save</Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+      </div>
+    </form>
   );
 }
 

@@ -129,6 +129,78 @@ export async function setPartnerPassword(
   return { ok: true };
 }
 
+const createPartnerSchema = z.object({
+  businessName: z.string().trim().min(1).max(120),
+  email: z.string().trim().toLowerCase().email(),
+  referralCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z0-9_-]{3,24}$/, "Use 3-24 letters/numbers."),
+  commissionPct: z.coerce.number().min(0).max(50),
+});
+
+/**
+ * Directly creates a referral partner with a custom code, skipping the
+ * application flow. For hand-issued codes given to a specific referrer
+ * (e.g. an influencer) rather than someone who applied.
+ */
+export async function createReferralPartner(
+  formData: FormData,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const parsed = createPartnerSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { ok: false, error: "Enter a name, email, code, and commission %." };
+  }
+  const { businessName, email, referralCode, commissionPct } = parsed.data;
+
+  const existingCode = await db.query.partners.findFirst({
+    where: eq(partners.referralCode, referralCode),
+  });
+  if (existingCode) return { ok: false, error: "That referral code is already taken." };
+
+  let user = await db.query.users.findFirst({ where: eq(users.email, email) });
+  if (!user) {
+    [user] = await db
+      .insert(users)
+      .values({ email, name: businessName, role: "partner" })
+      .returning();
+  } else {
+    const existingPartner = await db.query.partners.findFirst({
+      where: eq(partners.userId, user.id),
+    });
+    if (existingPartner) {
+      return { ok: false, error: "That email is already a partner." };
+    }
+    if (user.role === "customer") {
+      await db.update(users).set({ role: "partner" }).where(eq(users.id, user.id));
+    }
+  }
+
+  const [partner] = await db
+    .insert(partners)
+    .values({
+      userId: user.id,
+      businessName,
+      commissionRateBps: Math.round(commissionPct * 100),
+      referralCode,
+      approvedAt: new Date(),
+    })
+    .returning();
+
+  await audit({
+    actorUserId: admin.id,
+    action: "partner.created",
+    entityType: "partner",
+    entityId: partner.id,
+    metadata: { referralCode, commissionPct },
+  });
+
+  revalidatePath("/admin/partners");
+  return { ok: true };
+}
+
 export async function rejectApplication(
   applicationId: string,
 ): Promise<ActionResult> {
