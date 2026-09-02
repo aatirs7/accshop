@@ -64,6 +64,13 @@
       "when": 1787956004314,
       "tag": "0008_add_supplier_stock_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788010000000,
+      "tag": "0009_add_siebecker_referral_partner",
+      "breakpoints": true
     }
   ]
 }
