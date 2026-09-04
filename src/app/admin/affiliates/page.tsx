@@ -4,6 +4,7 @@ import { affiliateCommissions, affiliates, orders } from "@/lib/db/schema";
 import { formatDate, formatMoney } from "@/lib/format";
 import { markAffiliateCommissionsPaid } from "@/actions/admin/affiliates";
 import { ActionButton } from "@/components/admin/action-button";
+import { AffiliateForm } from "@/components/admin/queue-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -52,12 +53,15 @@ export default async function AdminAffiliatesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-medium">Affiliates</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Self-serve referrers. They earn 10% per referred sale; settle owed
-          commission after you pay them out.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-medium">Affiliates</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Self-serve referrers, plus any referral codes you add yourself.
+            Settle owed commission after you pay them out.
+          </p>
+        </div>
+        <AffiliateForm />
       </div>
       <Card>
         <CardContent className="pt-6">

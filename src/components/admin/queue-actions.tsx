@@ -23,6 +23,7 @@ import {
   updateSupplier,
   updateTestimonial,
 } from "@/actions/admin/catalog";
+import { createAffiliate } from "@/actions/admin/affiliates";
 import { setTestimonialFlags, deleteTestimonial } from "@/actions/admin/catalog";
 import type { ActionResult } from "@/actions/admin/orders";
 import { ActionButton } from "@/components/admin/action-button";
@@ -382,6 +383,44 @@ export function TestimonialForm() {
           accept="image/*"
           className="mt-1 block text-xs file:mr-3 file:rounded-md file:border-0 file:bg-brand-gold file:px-3 file:py-1.5 file:text-[oklch(0.17_0.02_85)]"
         />
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={pending}>Save</Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+      </div>
+    </form>
+  );
+}
+
+export function AffiliateForm() {
+  const { pending, run } = useRun();
+  const [open, setOpen] = useState(false);
+  if (!open) return <Button onClick={() => setOpen(true)}>Add referral code</Button>;
+  return (
+    <form
+      className="space-y-3 rounded-lg border border-border/60 p-4"
+      action={(fd) => {
+        run(() => createAffiliate(fd), "Referral code added");
+        setOpen(false);
+      }}
+    >
+      <div className="grid gap-3 sm:grid-cols-4">
+        <div>
+          <Label className="text-xs" htmlFor="a-name">Name *</Label>
+          <Input id="a-name" name="name" required className="mt-1" />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="a-email">Email *</Label>
+          <Input id="a-email" name="email" type="email" required className="mt-1" />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="a-code">Code</Label>
+          <Input id="a-code" name="code" className="mt-1" placeholder="e.g. SIEBECKER" />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="a-pct">Commission %</Label>
+          <Input id="a-pct" name="commissionPercent" type="number" min={0} max={50} step="0.1" defaultValue={10} className="mt-1" />
+        </div>
       </div>
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={pending}>Save</Button>
