@@ -112,7 +112,7 @@ export default async function CheckoutPage({
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Your account details are emailed to you within 1-5 hours of
-          payment, plus a 14-day replacement warranty. See our{" "}
+          payment, plus a 14-day replacement-first warranty. See our{" "}
           <Link href="/warranty" className="underline">
             warranty policy
           </Link>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { startCheckout, type CheckoutResult } from "@/actions/checkout";
 import { formatMoney } from "@/lib/format";
@@ -33,6 +34,7 @@ export function CheckoutForm(props: {
   const [quantity, setQuantity] = useState(1);
   const [variantId, setVariantId] = useState(props.initialVariantId ?? "");
   const [promoCode, setPromoCode] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [state, action, pending] = useActionState<CheckoutResult | null, FormData>(
     startCheckout,
     null,
@@ -170,12 +172,48 @@ export function CheckoutForm(props: {
         )}
       </div>
 
-      <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4">
+      <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4 space-y-1.5">
         <p className="text-sm font-medium">Secure card checkout</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          You&apos;ll be taken to our secure card checkout to pay. Your account
-          details are emailed to you within 1-5 hours of payment.
+        <p className="text-xs text-muted-foreground">
+          You&apos;ll be taken to our secure card checkout to pay.
         </p>
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Estimated delivery:</span>{" "}
+          your account details are emailed to you within 1-5 hours of payment.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">
+            14-day replacement-first warranty:
+          </span>{" "}
+          if anything&apos;s wrong, we replace the account first.
+        </p>
+      </div>
+
+      <div className="flex items-start gap-2">
+        <input
+          id="agreeTerms"
+          name="agreeTerms"
+          type="checkbox"
+          required
+          checked={agreed}
+          onChange={(e) => setAgreed(e.target.checked)}
+          className="mt-0.5 accent-[oklch(0.83_0.115_85)]"
+        />
+        <label htmlFor="agreeTerms" className="text-xs text-muted-foreground">
+          I agree to the{" "}
+          <Link href="/terms" className="underline" target="_blank">
+            Terms of Service
+          </Link>
+          ,{" "}
+          <Link href="/privacy" className="underline" target="_blank">
+            Privacy Policy
+          </Link>
+          , and{" "}
+          <Link href="/refund-policy" className="underline" target="_blank">
+            Refund &amp; Replacement Policy
+          </Link>
+          .
+        </label>
       </div>
 
       <div className="space-y-1 border-t border-border/60 pt-4">
@@ -209,7 +247,12 @@ export function CheckoutForm(props: {
         <p className="text-sm text-destructive">{state.error}</p>
       )}
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
+      <Button
+        type="submit"
+        size="lg"
+        disabled={pending || !agreed}
+        className="w-full"
+      >
         {pending ? "Preparing your order…" : "Continue to secure checkout"}
       </Button>
     </form>

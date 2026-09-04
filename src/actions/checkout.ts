@@ -31,6 +31,7 @@ const checkoutSchema = z.object({
   variantId: z.string().optional(),
   referralCode: z.string().trim().optional(),
   promoCode: z.string().trim().optional(),
+  agreeTerms: z.literal("on"),
 });
 
 export type CheckoutResult = { ok: false; error: string };
@@ -41,7 +42,15 @@ export async function startCheckout(
 ): Promise<CheckoutResult> {
   const parsed = checkoutSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { ok: false, error: "Please check your email and quantity." };
+    const agreeIssue = parsed.error.issues.some(
+      (i) => i.path[0] === "agreeTerms",
+    );
+    return {
+      ok: false,
+      error: agreeIssue
+        ? "Please agree to the Terms, Privacy Policy, and Refund/Replacement Policy to continue."
+        : "Please check your email and quantity.",
+    };
   }
   const { productSlug, quantity, ref, variantId, referralCode, promoCode } =
     parsed.data;
