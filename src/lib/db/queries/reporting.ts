@@ -135,6 +135,8 @@ export async function partnerVolumes() {
       partnerId: partners.id,
       businessName: partners.businessName,
       status: partners.status,
+      referralCode: partners.referralCode,
+      commissionRateBps: partners.commissionRateBps,
       revenueCents: sql<number>`coalesce(sum(${orders.totalCents}), 0)`,
       accountsSold: sql<number>`coalesce(sum(${orders.quantity}), 0)`,
       orderCount: count(orders.id),
@@ -145,7 +147,13 @@ export async function partnerVolumes() {
       and(eq(orders.partnerId, partners.id), paid, notDemoOrder),
     )
     .where(notDemoPartner)
-    .groupBy(partners.id, partners.businessName, partners.status)
+    .groupBy(
+      partners.id,
+      partners.businessName,
+      partners.status,
+      partners.referralCode,
+      partners.commissionRateBps,
+    )
     .orderBy(desc(sql`coalesce(sum(${orders.totalCents}), 0)`));
 }
 
