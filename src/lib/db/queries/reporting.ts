@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lt, notInArray, sql, count } from "drizzle-orm";
+import { and, desc, eq, gt, gte, lt, notInArray, sql, count } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   commissions,
@@ -176,4 +176,84 @@ export async function customerLtv(userId: string) {
     orderCount: Number(row.orderCount),
     accountsBought: Number(row.accountsBought),
   };
+}
+
+/**
+ * Compact paid-order history for the overview's client-side widgets (today
+ * so far, streak, best day, 14-day chart). Three numbers per order, oldest
+ * first, so the full history travels cheaply and buckets by the owner's
+ * local day in the browser.
+ */
+export async function paidTimeline() {
+  const notDemo = await excludeDemo();
+  const rows = await db
+    .select({
+      paidAt: orders.paidAt,
+      totalCents: orders.totalCents,
+      quantity: orders.quantity,
+    })
+    .from(orders)
+    .where(notDemo ? and(paid, notDemo) : paid)
+    .orderBy(orders.paidAt);
+  return rows
+    .filter((r): r is typeof r & { paidAt: Date } => r.paidAt !== null)
+    .map((r) => ({ t: r.paidAt.getTime(), c: r.totalCents, q: r.quantity }));
+}
+
+export type RecentSale = {
+  orderCode: string;
+  totalCents: number;
+  quantity: number;
+  productName: string;
+  method: "stripe" | "zelle";
+  customer: string;
+  paidAt: number;
+};
+
+function toRecentSale(o: {
+  orderCode: string;
+  totalCents: number;
+  quantity: number;
+  paymentMethod: "stripe" | "zelle";
+  paidAt: Date | null;
+  product: { name: string };
+  user: { name: string | null; email: string };
+}): RecentSale {
+  return {
+    orderCode: o.orderCode,
+    totalCents: o.totalCents,
+    quantity: o.quantity,
+    productName: o.product.name,
+    method: o.paymentMethod,
+    customer: o.user.name ?? o.user.email,
+    paidAt: o.paidAt?.getTime() ?? 0,
+  };
+}
+
+/** Newest paid orders for the overview's live sales feed. */
+export async function recentSales(limit = 8): Promise<RecentSale[]> {
+  const notDemo = await excludeDemo();
+  const rows = await db.query.orders.findMany({
+    where: notDemo ? and(paid, notDemo) : paid,
+    with: { user: true, product: true },
+    orderBy: desc(orders.paidAt),
+    limit,
+  });
+  return rows.map(toRecentSale);
+}
+
+/**
+ * Paid orders that landed after `since`, oldest first. Polled by the
+ * overview so a fresh sale can ring the bell within seconds.
+ */
+export async function salesSince(since: Date, limit = 20): Promise<RecentSale[]> {
+  const notDemo = await excludeDemo();
+  const filters = [paid, gt(orders.paidAt, since), notDemo].filter(Boolean);
+  const rows = await db.query.orders.findMany({
+    where: and(...filters),
+    with: { user: true, product: true },
+    orderBy: orders.paidAt,
+    limit,
+  });
+  return rows.map(toRecentSale);
 }
