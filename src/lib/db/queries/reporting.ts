@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, notInArray, sql, count } from "drizzle-orm";
+import { and, desc, eq, gte, lt, notInArray, sql, count } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   commissions,
@@ -23,12 +23,23 @@ async function excludeDemo() {
   return ids.length ? notInArray(orders.userId, ids) : undefined;
 }
 
-export async function revenueSummary(sinceDays?: number) {
-  const since = sinceDays
-    ? gte(orders.paidAt, new Date(Date.now() - sinceDays * 86_400_000))
-    : undefined;
+export type DateRange = { from?: Date; to?: Date };
+
+/**
+ * Paid-order totals, optionally limited to a window on `paidAt`. Pass a
+ * number of days for a rolling "last N days" window, or an explicit
+ * `{ from, to }` range (either bound optional, `to` is exclusive) for the
+ * overview's Today / Last 7 / Last 30 / Custom pickers.
+ */
+export async function revenueSummary(range?: number | DateRange) {
+  const window: DateRange =
+    typeof range === "number"
+      ? { from: new Date(Date.now() - range * 86_400_000) }
+      : (range ?? {});
+  const since = window.from ? gte(orders.paidAt, window.from) : undefined;
+  const until = window.to ? lt(orders.paidAt, window.to) : undefined;
   const notDemo = await excludeDemo();
-  const filters = [paid, since, notDemo].filter(Boolean);
+  const filters = [paid, since, until, notDemo].filter(Boolean);
   const [row] = await db
     .select({
       revenueCents: sql<number>`coalesce(sum(${orders.totalCents}), 0)`,
