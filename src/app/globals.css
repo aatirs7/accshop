@@ -166,4 +166,87 @@
       animation: none;
     }
   }
+
+  /* Admin overview: dopamine layer */
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+  .animate-shimmer {
+    animation: shimmer 2.4s ease-in-out infinite;
+  }
+  @keyframes bar-rise {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+  .revenue-bar {
+    transform-origin: bottom;
+    animation: bar-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes sale-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 oklch(0.83 0.115 85 / 0%);
+    }
+    50% {
+      box-shadow: 0 0 18px 0 oklch(0.83 0.115 85 / 35%);
+    }
+  }
+  .sale-fresh {
+    animation: sale-glow 2.2s ease-in-out infinite;
+  }
+  @keyframes flame {
+    0%,
+    100% {
+      transform: scale(1) rotate(-3deg);
+    }
+    50% {
+      transform: scale(1.15) rotate(3deg);
+    }
+  }
+  .animate-flame {
+    animation: flame 1.4s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  /* Card that lifts and glows gold on hover */
+  .stat-glow {
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  @media (hover: hover) {
+    .stat-glow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px -10px oklch(0.83 0.115 85 / 35%);
+    }
+  }
+  .hero-glow {
+    background-image:
+      radial-gradient(
+        70% 80% at 15% 0%,
+        oklch(0.83 0.115 85 / 16%),
+        transparent 70%
+      ),
+      radial-gradient(
+        40% 60% at 90% 100%,
+        oklch(0.75 0.14 155 / 8%),
+        transparent 70%
+      );
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-shimmer,
+    .revenue-bar,
+    .sale-fresh,
+    .animate-flame {
+      animation: none;
+    }
+  }
 }
