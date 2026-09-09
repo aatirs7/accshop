@@ -1,6 +1,9 @@
+import { auth } from "@/lib/auth";
 import {
   commissionSummary,
+  paidTimeline,
   railMix,
+  recentSales,
   revenueSummary,
   sourceMix,
   topCustomers,
@@ -12,6 +15,12 @@ import {
   type MetricsRange,
 } from "@/lib/admin/metrics-range";
 import { MetricsRangePicker } from "@/components/admin/metrics-range-picker";
+import { CountUp } from "@/components/admin/overview/count-up";
+import { Milestones } from "@/components/admin/overview/milestones";
+import { RecentSales } from "@/components/admin/overview/recent-sales";
+import { RevenueChart } from "@/components/admin/overview/revenue-chart";
+import { SaleCelebrator } from "@/components/admin/overview/sale-celebrator";
+import { TodayHero } from "@/components/admin/overview/today-hero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -22,14 +31,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Stat({ label, cents, hint }: { label: string; cents: number; hint?: string }) {
   return (
-    <Card>
+    <Card className="transition-all duration-300 hover:-translate-y-0.5 hover:ring-brand-gold/40 hover:shadow-[0_0_40px_-14px_var(--brand-gold)]">
       <CardContent className="pt-6">
         <p className="text-xs uppercase tracking-wider text-muted-foreground">
           {label}
         </p>
-        <p className="mt-1 font-display text-3xl text-brand-gold">{value}</p>
+        <p className="mt-1 font-display text-3xl text-brand-gold">
+          <CountUp value={cents} />
+        </p>
         {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
       </CardContent>
     </Card>
@@ -72,25 +83,34 @@ export default async function AdminOverviewPage({
   const range = parseMetricsRange(await searchParams);
   const label = rangeLabel(range);
 
-  const [allTime, period, rails, sources, customers, comms] = await Promise.all([
-    revenueSummary(),
-    revenueSummary({ from: range.from, to: range.to }),
-    railMix(),
-    sourceMix(),
-    topCustomers(8),
-    commissionSummary(),
-  ]);
+  const [allTime, period, rails, sources, customers, comms, timeline, latest, session] =
+    await Promise.all([
+      revenueSummary(),
+      revenueSummary({ from: range.from, to: range.to }),
+      railMix(),
+      sourceMix(),
+      topCustomers(8),
+      commissionSummary(),
+      paidTimeline(),
+      recentSales(8),
+      auth(),
+    ]);
 
   const totalRailRevenue = rails.reduce((s, r) => s + Number(r.revenueCents), 0);
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-medium">Overview</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Revenue, profit, and where the volume comes from.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-medium">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Revenue, profit, and where the volume comes from.
+          </p>
+        </div>
+        <SaleCelebrator />
       </div>
+
+      <TodayHero points={timeline} ownerName={session?.user?.name} />
 
       <div className="space-y-3">
         <MetricsRangePicker
@@ -104,25 +124,35 @@ export default async function AdminOverviewPage({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label={`Revenue (${label})`}
-          value={formatMoney(period.revenueCents)}
+          cents={period.revenueCents}
           hint={`${period.orderCount} orders · ${period.accountsSold} accounts`}
         />
         <Stat
           label={`Profit (${label})`}
-          value={formatMoney(period.marginCents)}
+          cents={period.marginCents}
           hint={`cost ${formatMoney(period.costCents)}`}
         />
         <Stat
           label="Revenue (all time)"
-          value={formatMoney(allTime.revenueCents)}
+          cents={allTime.revenueCents}
           hint={`${allTime.accountsSold} accounts sold`}
         />
         <Stat
           label="Profit (all time)"
-          value={formatMoney(allTime.marginCents)}
+          cents={allTime.marginCents}
           hint={`cost ${formatMoney(allTime.costCents)}`}
         />
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RevenueChart points={timeline} />
+        <RecentSales sales={latest} />
+      </div>
+
+      <Milestones
+        revenueCents={allTime.revenueCents}
+        accountsSold={allTime.accountsSold}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
