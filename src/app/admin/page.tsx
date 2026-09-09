@@ -5,7 +5,13 @@ import {
   sourceMix,
   topCustomers,
 } from "@/lib/db/queries/reporting";
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
+import {
+  parseMetricsRange,
+  rangeLabel,
+  type MetricsRange,
+} from "@/lib/admin/metrics-range";
+import { MetricsRangePicker } from "@/components/admin/metrics-range-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -30,10 +36,45 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
-export default async function AdminOverviewPage() {
-  const [allTime, last30, rails, sources, customers, comms] = await Promise.all([
+/**
+ * Prefer the YYYY-MM-DD the owner picked over the timestamp: the timestamp
+ * is their local midnight, which the server (UTC) could format as the
+ * previous day.
+ */
+function formatDay(day: string | undefined, fallback: Date | undefined): string {
+  if (day) {
+    const [y, m, d] = day.split("-").map(Number);
+    return formatDate(new Date(y, m - 1, d));
+  }
+  return fallback ? formatDate(fallback) : "";
+}
+
+function describeRange(range: MetricsRange): string {
+  if (range.preset === "all") return "Every paid order since launch.";
+  if (range.preset === "custom") {
+    // `to` is exclusive (midnight after the chosen end day), so step back
+    // to show the day the owner actually picked.
+    const endDay = range.to ? new Date(range.to.getTime() - 1) : undefined;
+    const start = formatDay(range.fromDay, range.from);
+    const end = formatDay(range.toDay, endDay);
+    if (start && end) return `Paid orders from ${start} to ${end}.`;
+    if (start) return `Paid orders since ${start}.`;
+    if (end) return `Paid orders up to ${end}.`;
+  }
+  return `Paid orders in the ${rangeLabel(range)}.`;
+}
+
+export default async function AdminOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const range = parseMetricsRange(await searchParams);
+  const label = rangeLabel(range);
+
+  const [allTime, period, rails, sources, customers, comms] = await Promise.all([
     revenueSummary(),
-    revenueSummary(30),
+    revenueSummary({ from: range.from, to: range.to }),
     railMix(),
     sourceMix(),
     topCustomers(8),
@@ -47,20 +88,29 @@ export default async function AdminOverviewPage() {
       <div>
         <h1 className="font-display text-3xl font-medium">Overview</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Revenue, margin, and where the volume comes from.
+          Revenue, profit, and where the volume comes from.
         </p>
+      </div>
+
+      <div className="space-y-3">
+        <MetricsRangePicker
+          preset={range.preset}
+          fromDay={range.fromDay}
+          toDay={range.toDay}
+        />
+        <p className="text-xs text-muted-foreground">{describeRange(range)}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
-          label="Revenue (30d)"
-          value={formatMoney(last30.revenueCents)}
-          hint={`${last30.orderCount} orders · ${last30.accountsSold} accounts`}
+          label={`Revenue (${label})`}
+          value={formatMoney(period.revenueCents)}
+          hint={`${period.orderCount} orders · ${period.accountsSold} accounts`}
         />
         <Stat
-          label="Margin (30d)"
-          value={formatMoney(last30.marginCents)}
-          hint={`cost ${formatMoney(last30.costCents)}`}
+          label={`Profit (${label})`}
+          value={formatMoney(period.marginCents)}
+          hint={`cost ${formatMoney(period.costCents)}`}
         />
         <Stat
           label="Revenue (all time)"
@@ -68,7 +118,7 @@ export default async function AdminOverviewPage() {
           hint={`${allTime.accountsSold} accounts sold`}
         />
         <Stat
-          label="Margin (all time)"
+          label="Profit (all time)"
           value={formatMoney(allTime.marginCents)}
           hint={`cost ${formatMoney(allTime.costCents)}`}
         />
