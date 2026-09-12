@@ -561,6 +561,28 @@ export const emailCaptures = pgTable("email_captures", {
   createdAt: createdAt(),
 });
 
+// Off-site bulk orders the owner supplies directly to coaches. Nothing
+// flows through checkout for these, so the owner types in the revenue,
+// profit, and account count by hand and the Overview folds them into its
+// revenue/profit numbers alongside paid orders.
+export const bulkSales = pgTable(
+  "bulk_sales",
+  {
+    id: id(),
+    coachName: text("coach_name").notNull(),
+    accounts: integer("accounts").notNull(),
+    revenueCents: integer("revenue_cents").notNull(),
+    profitCents: integer("profit_cents").notNull(),
+    // Day the sale happened (local midnight); drives the Overview's range
+    // filter the same way `orders.paidAt` does.
+    soldAt: timestamp("sold_at", { withTimezone: true, mode: "date" }).notNull(),
+    notes: text("notes"),
+    createdBy: text("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("bulk_sales_sold_at_idx").on(t.soldAt)],
+);
+
 export const auditLogs = pgTable(
   "audit_logs",
   {

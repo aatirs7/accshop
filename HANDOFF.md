@@ -16,6 +16,7 @@ Next.js 16 (App Router) · Neon Postgres · Drizzle · Auth.js · Stripe + Zelle
 - Checkout: Stripe Checkout + manual Zelle rail (unique order-code memo)
 - Customer dashboard: order pipeline, one-time encrypted credential reveal, warranty countdown, claims
 - Admin CRM: orders workbench, customers/LTV, partners + pricing rules + commissions, suppliers, application/inquiry/claim queues, reporting (revenue/margin, Stripe vs Zelle rail mix)
+- Manual bulk-order log on Admin → Overview: the owner types in coach name, account count, revenue, and profit for off-site bulk supply deals; those amounts are added into the Overview's revenue/profit cards for the selected period and all time (`bulk_sales` table, `src/actions/admin/bulk-sales.ts`)
 - Auth gating verified: `/dashboard` + `/admin` redirect unauthenticated users; non-admins get 404 on `/admin`
 - Cron (`/api/cron/expire-zelle`) protected (401 without secret); Stripe webhook route live
 
