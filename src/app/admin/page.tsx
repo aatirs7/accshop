@@ -1,10 +1,13 @@
 import {
+  bulkSalesSummary,
   commissionSummary,
   railMix,
+  recentBulkSales,
   revenueSummary,
   sourceMix,
   topCustomers,
 } from "@/lib/db/queries/reporting";
+import { deleteBulkSale } from "@/actions/admin/bulk-sales";
 import { formatDate, formatMoney } from "@/lib/format";
 import {
   parseMetricsRange,
@@ -12,6 +15,8 @@ import {
   type MetricsRange,
 } from "@/lib/admin/metrics-range";
 import { MetricsRangePicker } from "@/components/admin/metrics-range-picker";
+import { ActionButton } from "@/components/admin/action-button";
+import { BulkSaleForm } from "@/components/admin/bulk-sale-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -50,18 +55,23 @@ function formatDay(day: string | undefined, fallback: Date | undefined): string 
 }
 
 function describeRange(range: MetricsRange): string {
-  if (range.preset === "all") return "Every paid order since launch.";
+  if (range.preset === "all") return "Every paid order and bulk order since launch.";
   if (range.preset === "custom") {
     // `to` is exclusive (midnight after the chosen end day), so step back
     // to show the day the owner actually picked.
     const endDay = range.to ? new Date(range.to.getTime() - 1) : undefined;
     const start = formatDay(range.fromDay, range.from);
     const end = formatDay(range.toDay, endDay);
-    if (start && end) return `Paid orders from ${start} to ${end}.`;
-    if (start) return `Paid orders since ${start}.`;
-    if (end) return `Paid orders up to ${end}.`;
+    if (start && end) return `Paid orders and bulk orders from ${start} to ${end}.`;
+    if (start) return `Paid orders and bulk orders since ${start}.`;
+    if (end) return `Paid orders and bulk orders up to ${end}.`;
   }
-  return `Paid orders in the ${rangeLabel(range)}.`;
+  return `Paid orders and bulk orders in the ${rangeLabel(range)}.`;
+}
+
+/** "$1,200 site · $800 bulk" style breakdown under a combined stat. */
+function splitHint(siteCents: number, bulkCents: number): string {
+  return `${formatMoney(siteCents)} site · ${formatMoney(bulkCents)} bulk`;
 }
 
 export default async function AdminOverviewPage({
@@ -72,9 +82,22 @@ export default async function AdminOverviewPage({
   const range = parseMetricsRange(await searchParams);
   const label = rangeLabel(range);
 
-  const [allTime, period, rails, sources, customers, comms] = await Promise.all([
+  const [
+    allTime,
+    period,
+    bulkAllTime,
+    bulkPeriod,
+    bulkEntries,
+    rails,
+    sources,
+    customers,
+    comms,
+  ] = await Promise.all([
     revenueSummary(),
     revenueSummary({ from: range.from, to: range.to }),
+    bulkSalesSummary(),
+    bulkSalesSummary({ from: range.from, to: range.to }),
+    recentBulkSales(20),
     railMix(),
     sourceMix(),
     topCustomers(8),
@@ -82,6 +105,12 @@ export default async function AdminOverviewPage({
   ]);
 
   const totalRailRevenue = rails.reduce((s, r) => s + Number(r.revenueCents), 0);
+
+  // Headline numbers combine site checkout with hand-entered bulk orders.
+  const periodRevenue = period.revenueCents + bulkPeriod.revenueCents;
+  const periodProfit = period.marginCents + bulkPeriod.profitCents;
+  const allRevenue = allTime.revenueCents + bulkAllTime.revenueCents;
+  const allProfit = allTime.marginCents + bulkAllTime.profitCents;
 
   return (
     <div className="space-y-8">
@@ -104,25 +133,98 @@ export default async function AdminOverviewPage({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label={`Revenue (${label})`}
-          value={formatMoney(period.revenueCents)}
-          hint={`${period.orderCount} orders · ${period.accountsSold} accounts`}
+          value={formatMoney(periodRevenue)}
+          hint={`${period.orderCount} orders · ${bulkPeriod.saleCount} bulk · ${
+            period.accountsSold + bulkPeriod.accountsSold
+          } accounts`}
         />
         <Stat
           label={`Profit (${label})`}
-          value={formatMoney(period.marginCents)}
-          hint={`cost ${formatMoney(period.costCents)}`}
+          value={formatMoney(periodProfit)}
+          hint={splitHint(period.marginCents, bulkPeriod.profitCents)}
         />
         <Stat
           label="Revenue (all time)"
-          value={formatMoney(allTime.revenueCents)}
-          hint={`${allTime.accountsSold} accounts sold`}
+          value={formatMoney(allRevenue)}
+          hint={`${allTime.accountsSold + bulkAllTime.accountsSold} accounts sold · ${splitHint(
+            allTime.revenueCents,
+            bulkAllTime.revenueCents,
+          )}`}
         />
         <Stat
           label="Profit (all time)"
-          value={formatMoney(allTime.marginCents)}
-          hint={`cost ${formatMoney(allTime.costCents)}`}
+          value={formatMoney(allProfit)}
+          hint={splitHint(allTime.marginCents, bulkAllTime.profitCents)}
         />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Bulk orders to coaches
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              (supplied outside the site, entered by hand)
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <BulkSaleForm />
+
+          {bulkEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No bulk orders logged yet. Add one above and it will count toward
+              the revenue and profit numbers at the top.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Coach</TableHead>
+                  <TableHead className="text-right">Accounts</TableHead>
+                  <TableHead className="text-right">Revenue</TableHead>
+                  <TableHead className="text-right">Profit</TableHead>
+                  <TableHead className="w-0" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bulkEntries.map((b) => (
+                  <TableRow key={b.id}>
+                    <TableCell className="whitespace-nowrap">
+                      {formatDate(b.soldAt)}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{b.coachName}</span>
+                      {b.notes && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {b.notes}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">{b.accounts}</TableCell>
+                    <TableCell className="text-right">
+                      {formatMoney(b.revenueCents)}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-brand-gold">
+                      {formatMoney(b.profitCents)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <ActionButton
+                        action={deleteBulkSale.bind(null, b.id)}
+                        variant="ghost"
+                        confirmText={`Remove the bulk order for ${b.coachName}? The revenue and profit will come off the totals.`}
+                        successText="Bulk order removed"
+                      >
+                        Remove
+                      </ActionButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

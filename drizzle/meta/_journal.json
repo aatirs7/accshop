@@ -64,6 +64,13 @@
       "when": 1787956004314,
       "tag": "0008_add_supplier_stock_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789257219783,
+      "tag": "0009_add_bulk_sales",
+      "breakpoints": true
     }
   ]
 }

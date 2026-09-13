@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, lt, notInArray, sql, count } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  bulkSales,
   commissions,
   deliverables,
   orders,
@@ -67,6 +68,42 @@ export async function revenueSummary(range?: number | DateRange) {
     orderCount: Number(row.orderCount),
     accountsSold: Number(row.accountsSold),
   };
+}
+
+/**
+ * Hand-entered bulk orders to coaches (see `bulkSales` in the schema),
+ * optionally limited to a window on `soldAt` with the same `{ from, to }`
+ * semantics as `revenueSummary`. These never pass through checkout, so the
+ * owner's typed-in revenue and profit are taken as-is.
+ */
+export async function bulkSalesSummary(range?: DateRange) {
+  const since = range?.from ? gte(bulkSales.soldAt, range.from) : undefined;
+  const until = range?.to ? lt(bulkSales.soldAt, range.to) : undefined;
+  const filters = [since, until].filter(Boolean);
+  const [row] = await db
+    .select({
+      revenueCents: sql<number>`coalesce(sum(${bulkSales.revenueCents}), 0)`,
+      profitCents: sql<number>`coalesce(sum(${bulkSales.profitCents}), 0)`,
+      saleCount: count(),
+      accountsSold: sql<number>`coalesce(sum(${bulkSales.accounts}), 0)`,
+    })
+    .from(bulkSales)
+    .where(filters.length ? and(...filters) : undefined);
+  return {
+    revenueCents: Number(row.revenueCents),
+    profitCents: Number(row.profitCents),
+    saleCount: Number(row.saleCount),
+    accountsSold: Number(row.accountsSold),
+  };
+}
+
+/** Most recent bulk sales, newest first, for the Overview's entry log. */
+export async function recentBulkSales(limit = 20) {
+  return db
+    .select()
+    .from(bulkSales)
+    .orderBy(desc(bulkSales.soldAt), desc(bulkSales.createdAt))
+    .limit(limit);
 }
 
 /** Stripe vs Zelle revenue split, the processor-risk gauge. */
