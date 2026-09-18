@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { AdminPwaRegistrar } from "@/components/admin/admin-pwa-registrar";
 import { AdminPushToggle } from "@/components/admin/admin-push-toggle";
+import { SaleChime } from "@/components/admin/sale-chime";
 import {
   Card,
   CardContent,
@@ -82,6 +83,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen">
       <AdminPwaRegistrar />
+      <SaleChime />
       <aside className="hidden w-56 shrink-0 border-r border-border/60 bg-sidebar md:block">
         <div className="sticky top-0 p-5">
           <Link
