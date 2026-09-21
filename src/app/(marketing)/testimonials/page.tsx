@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { testimonials } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ export const metadata = { title: "Testimonials" };
 export default async function TestimonialsPage() {
   const all = await db.query.testimonials.findMany({
     where: eq(testimonials.published, true),
-    orderBy: asc(testimonials.sort),
+    orderBy: desc(testimonials.createdAt),
   });
 
   return (
@@ -33,7 +33,7 @@ export default async function TestimonialsPage() {
         <div className="mt-16 text-center">
           <p className="text-muted-foreground">Ready to join them?</p>
           <Button asChild size="lg" className="mt-4">
-            <Link href="/accounts">Browse accounts</Link>
+            <Link href="/accounts">Get your account</Link>
           </Button>
         </div>
       </div>

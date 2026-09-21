@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, testimonials } from "@/lib/db/schema";
 import { socialProof } from "@/lib/db/queries/public";
@@ -21,7 +21,7 @@ export default async function HomePage() {
     }),
     db.query.testimonials.findMany({
       where: eq(testimonials.published, true),
-      orderBy: asc(testimonials.sort),
+      orderBy: desc(testimonials.createdAt),
       limit: 8,
     }),
     socialProof(),
