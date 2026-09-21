@@ -3,11 +3,14 @@ import {
   commissionSummary,
   railMix,
   recentBulkSales,
+  recentReplacements,
+  replacementsSummary,
   revenueSummary,
   sourceMix,
   topCustomers,
 } from "@/lib/db/queries/reporting";
 import { deleteBulkSale } from "@/actions/admin/bulk-sales";
+import { deleteReplacement } from "@/actions/admin/replacements";
 import { formatDate, formatMoney } from "@/lib/format";
 import {
   parseMetricsRange,
@@ -17,6 +20,7 @@ import {
 import { MetricsRangePicker } from "@/components/admin/metrics-range-picker";
 import { ActionButton } from "@/components/admin/action-button";
 import { BulkSaleForm } from "@/components/admin/bulk-sale-form";
+import { ReplacementForm } from "@/components/admin/replacement-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -74,6 +78,12 @@ function splitHint(siteCents: number, bulkCents: number): string {
   return `${formatMoney(siteCents)} site · ${formatMoney(bulkCents)} bulk`;
 }
 
+/** Profit breakdown, showing the replacement cost taken off when there is any. */
+function profitHint(siteCents: number, bulkCents: number, replCents: number): string {
+  const base = splitHint(siteCents, bulkCents);
+  return replCents > 0 ? `${base} · −${formatMoney(replCents)} repl` : base;
+}
+
 export default async function AdminOverviewPage({
   searchParams,
 }: {
@@ -88,6 +98,9 @@ export default async function AdminOverviewPage({
     bulkAllTime,
     bulkPeriod,
     bulkEntries,
+    replAllTime,
+    replPeriod,
+    replEntries,
     rails,
     sources,
     customers,
@@ -98,6 +111,9 @@ export default async function AdminOverviewPage({
     bulkSalesSummary(),
     bulkSalesSummary({ from: range.from, to: range.to }),
     recentBulkSales(20),
+    replacementsSummary(),
+    replacementsSummary({ from: range.from, to: range.to }),
+    recentReplacements(20),
     railMix(),
     sourceMix(),
     topCustomers(8),
@@ -106,11 +122,14 @@ export default async function AdminOverviewPage({
 
   const totalRailRevenue = rails.reduce((s, r) => s + Number(r.revenueCents), 0);
 
-  // Headline numbers combine site checkout with hand-entered bulk orders.
+  // Headline numbers combine site checkout with hand-entered bulk orders, then
+  // take off the cost of any accounts that had to be replaced.
   const periodRevenue = period.revenueCents + bulkPeriod.revenueCents;
-  const periodProfit = period.marginCents + bulkPeriod.profitCents;
+  const periodProfit =
+    period.marginCents + bulkPeriod.profitCents - replPeriod.costCents;
   const allRevenue = allTime.revenueCents + bulkAllTime.revenueCents;
-  const allProfit = allTime.marginCents + bulkAllTime.profitCents;
+  const allProfit =
+    allTime.marginCents + bulkAllTime.profitCents - replAllTime.costCents;
 
   return (
     <div className="space-y-8">
@@ -141,7 +160,7 @@ export default async function AdminOverviewPage({
         <Stat
           label={`Profit (${label})`}
           value={formatMoney(periodProfit)}
-          hint={splitHint(period.marginCents, bulkPeriod.profitCents)}
+          hint={profitHint(period.marginCents, bulkPeriod.profitCents, replPeriod.costCents)}
         />
         <Stat
           label="Revenue (all time)"
@@ -154,7 +173,7 @@ export default async function AdminOverviewPage({
         <Stat
           label="Profit (all time)"
           value={formatMoney(allProfit)}
-          hint={splitHint(allTime.marginCents, bulkAllTime.profitCents)}
+          hint={profitHint(allTime.marginCents, bulkAllTime.profitCents, replAllTime.costCents)}
         />
       </div>
 
@@ -214,6 +233,65 @@ export default async function AdminOverviewPage({
                         variant="ghost"
                         confirmText={`Remove the bulk order for ${b.coachName}? The revenue and profit will come off the totals.`}
                         successText="Bulk order removed"
+                      >
+                        Remove
+                      </ActionButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Replacements
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              (banned accounts you had to replace — $180 each, taken off profit)
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <ReplacementForm />
+
+          {replEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No replacements logged. Add one above whenever you replace a banned
+              account and its cost comes off the profit numbers at the top.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Accounts</TableHead>
+                  <TableHead className="text-right">Cost</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="w-0" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {replEntries.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="whitespace-nowrap">
+                      {formatDate(r.replacedAt)}
+                    </TableCell>
+                    <TableCell className="text-right">{r.accounts}</TableCell>
+                    <TableCell className="text-right font-medium text-brand-gold">
+                      {formatMoney(r.costCents)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {r.notes}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <ActionButton
+                        action={deleteReplacement.bind(null, r.id)}
+                        variant="ghost"
+                        confirmText={`Remove this replacement of ${r.accounts} account${r.accounts === 1 ? "" : "s"}? The cost will come back onto profit.`}
+                        successText="Replacement removed"
                       >
                         Remove
                       </ActionButton>

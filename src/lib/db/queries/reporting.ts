@@ -7,6 +7,7 @@ import {
   orders,
   partners,
   products,
+  replacements,
   users,
 } from "@/lib/db/schema";
 import { demoUserIds, testBuyerUserIds } from "@/lib/db/queries/demo-exclusion";
@@ -103,6 +104,38 @@ export async function recentBulkSales(limit = 20) {
     .select()
     .from(bulkSales)
     .orderBy(desc(bulkSales.soldAt), desc(bulkSales.createdAt))
+    .limit(limit);
+}
+
+/**
+ * Replacement-account costs (banned accounts the owner had to replace),
+ * optionally limited to a window on `replacedAt`. The Overview subtracts
+ * `costCents` from profit so the profit figure reflects real cost.
+ */
+export async function replacementsSummary(range?: DateRange) {
+  const since = range?.from ? gte(replacements.replacedAt, range.from) : undefined;
+  const until = range?.to ? lt(replacements.replacedAt, range.to) : undefined;
+  const filters = [since, until].filter(Boolean);
+  const [row] = await db
+    .select({
+      costCents: sql<number>`coalesce(sum(${replacements.costCents}), 0)`,
+      entryCount: count(),
+      accounts: sql<number>`coalesce(sum(${replacements.accounts}), 0)`,
+    })
+    .from(replacements)
+    .where(filters.length ? and(...filters) : undefined);
+  return {
+    costCents: Number(row.costCents),
+    entryCount: Number(row.entryCount),
+    accounts: Number(row.accounts),
+  };
+}
+
+export async function recentReplacements(limit = 20) {
+  return db
+    .select()
+    .from(replacements)
+    .orderBy(desc(replacements.replacedAt), desc(replacements.createdAt))
     .limit(limit);
 }
 

@@ -583,6 +583,27 @@ export const bulkSales = pgTable(
   (t) => [index("bulk_sales_sold_at_idx").on(t.soldAt)],
 );
 
+/**
+ * Banned accounts the owner had to replace, logged as a cost so profit stays
+ * accurate. Each replaced account costs a flat amount (see
+ * `REPLACEMENT_COST_CENTS`); `costCents` snapshots the total at entry time so a
+ * later rate change never rewrites history. Filtered on `replacedAt` by the
+ * Overview's date range, the same way sales are.
+ */
+export const replacements = pgTable(
+  "replacements",
+  {
+    id: id(),
+    accounts: integer("accounts").notNull(),
+    costCents: integer("cost_cents").notNull(),
+    replacedAt: timestamp("replaced_at", { withTimezone: true, mode: "date" }).notNull(),
+    notes: text("notes"),
+    createdBy: text("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("replacements_replaced_at_idx").on(t.replacedAt)],
+);
+
 export const auditLogs = pgTable(
   "audit_logs",
   {

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
@@ -21,15 +22,20 @@ export default async function AccountsPage() {
     orderBy: asc(products.sort),
   });
 
+  // We sell a single account, so there is no catalog to browse: send buyers
+  // straight to that account's page. The listing below only shows if the
+  // number of active products ever changes.
+  if (catalog.length === 1) redirect(`/accounts/${catalog[0].slug}`);
+
   return (
     <main className="bg-atmosphere">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="text-center">
           <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">
-            Catalog
+            Accounts
           </p>
           <h1 className="mt-2 font-display text-4xl font-medium sm:text-5xl">
-            Choose your tier
+            Available accounts
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground text-balance">
             Every account is affiliate-eligible, sourced for low ban risk, and
@@ -49,7 +55,7 @@ export default async function AccountsPage() {
                     variant="outline"
                     className="border-brand-gold/40 text-brand-gold"
                   >
-                    {p.tierLabel} tier
+                    TikTok Shop account
                   </Badge>
                   <span className="flex items-baseline gap-2">
                     <span className="font-display text-2xl text-brand-gold">

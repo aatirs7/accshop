@@ -47,7 +47,7 @@ export default async function ProductPage({
               variant="outline"
               className="border-brand-gold/40 text-brand-gold"
             >
-              {product.tierLabel} tier
+              TikTok Shop account
             </Badge>
             <h1 className="mt-4 font-display text-4xl font-medium leading-tight sm:text-5xl">
               {product.name}
