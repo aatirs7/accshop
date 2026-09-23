@@ -11,4 +11,5 @@ export const PROMO_CODES: Record<string, number> = {
   TINY: 40000,
   FIFTY: 5000,
   "125": 12500,
+  "250": 25000,
 };
