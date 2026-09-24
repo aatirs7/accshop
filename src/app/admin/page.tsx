@@ -1,8 +1,10 @@
 import {
   bulkSalesSummary,
   commissionSummary,
+  manualOrdersSummary,
   railMix,
   recentBulkSales,
+  recentManualOrders,
   recentReplacements,
   replacementsSummary,
   revenueSummary,
@@ -10,6 +12,7 @@ import {
   topCustomers,
 } from "@/lib/db/queries/reporting";
 import { deleteBulkSale } from "@/actions/admin/bulk-sales";
+import { deleteManualOrder } from "@/actions/admin/manual-orders";
 import { deleteReplacement } from "@/actions/admin/replacements";
 import { formatDate, formatMoney } from "@/lib/format";
 import {
@@ -20,6 +23,7 @@ import {
 import { MetricsRangePicker } from "@/components/admin/metrics-range-picker";
 import { ActionButton } from "@/components/admin/action-button";
 import { BulkSaleForm } from "@/components/admin/bulk-sale-form";
+import { ManualOrderForm } from "@/components/admin/manual-order-form";
 import { ReplacementForm } from "@/components/admin/replacement-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -59,28 +63,38 @@ function formatDay(day: string | undefined, fallback: Date | undefined): string 
 }
 
 function describeRange(range: MetricsRange): string {
-  if (range.preset === "all") return "Every paid order and bulk order since launch.";
+  if (range.preset === "all")
+    return "Every paid order, manual order, and bulk order since launch.";
   if (range.preset === "custom") {
     // `to` is exclusive (midnight after the chosen end day), so step back
     // to show the day the owner actually picked.
     const endDay = range.to ? new Date(range.to.getTime() - 1) : undefined;
     const start = formatDay(range.fromDay, range.from);
     const end = formatDay(range.toDay, endDay);
-    if (start && end) return `Paid orders and bulk orders from ${start} to ${end}.`;
-    if (start) return `Paid orders and bulk orders since ${start}.`;
-    if (end) return `Paid orders and bulk orders up to ${end}.`;
+    if (start && end) return `Orders and bulk orders from ${start} to ${end}.`;
+    if (start) return `Orders and bulk orders since ${start}.`;
+    if (end) return `Orders and bulk orders up to ${end}.`;
   }
-  return `Paid orders and bulk orders in the ${rangeLabel(range)}.`;
+  return `Paid orders, manual orders, and bulk orders in the ${rangeLabel(range)}.`;
 }
 
-/** "$1,200 site · $800 bulk" style breakdown under a combined stat. */
-function splitHint(siteCents: number, bulkCents: number): string {
-  return `${formatMoney(siteCents)} site · ${formatMoney(bulkCents)} bulk`;
+/**
+ * "$1,200 site · $800 bulk · $300 manual" style breakdown under a combined
+ * stat. Hand-entered orders are only listed once there are some.
+ */
+function splitHint(siteCents: number, bulkCents: number, manualCents: number): string {
+  const base = `${formatMoney(siteCents)} site · ${formatMoney(bulkCents)} bulk`;
+  return manualCents !== 0 ? `${base} · ${formatMoney(manualCents)} manual` : base;
 }
 
 /** Profit breakdown, showing the replacement cost taken off when there is any. */
-function profitHint(siteCents: number, bulkCents: number, replCents: number): string {
-  const base = splitHint(siteCents, bulkCents);
+function profitHint(
+  siteCents: number,
+  bulkCents: number,
+  manualCents: number,
+  replCents: number,
+): string {
+  const base = splitHint(siteCents, bulkCents, manualCents);
   return replCents > 0 ? `${base} · −${formatMoney(replCents)} repl` : base;
 }
 
@@ -98,6 +112,9 @@ export default async function AdminOverviewPage({
     bulkAllTime,
     bulkPeriod,
     bulkEntries,
+    manualAllTime,
+    manualPeriod,
+    manualEntries,
     replAllTime,
     replPeriod,
     replEntries,
@@ -111,6 +128,9 @@ export default async function AdminOverviewPage({
     bulkSalesSummary(),
     bulkSalesSummary({ from: range.from, to: range.to }),
     recentBulkSales(20),
+    manualOrdersSummary(),
+    manualOrdersSummary({ from: range.from, to: range.to }),
+    recentManualOrders(20),
     replacementsSummary(),
     replacementsSummary({ from: range.from, to: range.to }),
     recentReplacements(20),
@@ -122,14 +142,22 @@ export default async function AdminOverviewPage({
 
   const totalRailRevenue = rails.reduce((s, r) => s + Number(r.revenueCents), 0);
 
-  // Headline numbers combine site checkout with hand-entered bulk orders, then
-  // take off the cost of any accounts that had to be replaced.
-  const periodRevenue = period.revenueCents + bulkPeriod.revenueCents;
+  // Headline numbers combine site checkout with hand-entered bulk and single
+  // orders, then take off the cost of any accounts that had to be replaced.
+  const periodRevenue =
+    period.revenueCents + bulkPeriod.revenueCents + manualPeriod.amountCents;
   const periodProfit =
-    period.marginCents + bulkPeriod.profitCents - replPeriod.costCents;
-  const allRevenue = allTime.revenueCents + bulkAllTime.revenueCents;
+    period.marginCents +
+    bulkPeriod.profitCents +
+    manualPeriod.profitCents -
+    replPeriod.costCents;
+  const allRevenue =
+    allTime.revenueCents + bulkAllTime.revenueCents + manualAllTime.amountCents;
   const allProfit =
-    allTime.marginCents + bulkAllTime.profitCents - replAllTime.costCents;
+    allTime.marginCents +
+    bulkAllTime.profitCents +
+    manualAllTime.profitCents -
+    replAllTime.costCents;
 
   return (
     <div className="space-y-8">
@@ -153,14 +181,19 @@ export default async function AdminOverviewPage({
         <Stat
           label={`Revenue (${label})`}
           value={formatMoney(periodRevenue)}
-          hint={`${period.orderCount} orders · ${bulkPeriod.saleCount} bulk · ${
-            period.accountsSold + bulkPeriod.accountsSold
-          } accounts`}
+          hint={`${period.orderCount} orders · ${bulkPeriod.saleCount} bulk${
+            manualPeriod.orderCount ? ` · ${manualPeriod.orderCount} manual` : ""
+          } · ${period.accountsSold + bulkPeriod.accountsSold} accounts`}
         />
         <Stat
           label={`Profit (${label})`}
           value={formatMoney(periodProfit)}
-          hint={profitHint(period.marginCents, bulkPeriod.profitCents, replPeriod.costCents)}
+          hint={profitHint(
+            period.marginCents,
+            bulkPeriod.profitCents,
+            manualPeriod.profitCents,
+            replPeriod.costCents,
+          )}
         />
         <Stat
           label="Revenue (all time)"
@@ -168,14 +201,86 @@ export default async function AdminOverviewPage({
           hint={`${allTime.accountsSold + bulkAllTime.accountsSold} accounts sold · ${splitHint(
             allTime.revenueCents,
             bulkAllTime.revenueCents,
+            manualAllTime.amountCents,
           )}`}
         />
         <Stat
           label="Profit (all time)"
           value={formatMoney(allProfit)}
-          hint={profitHint(allTime.marginCents, bulkAllTime.profitCents, replAllTime.costCents)}
+          hint={profitHint(
+            allTime.marginCents,
+            bulkAllTime.profitCents,
+            manualAllTime.profitCents,
+            replAllTime.costCents,
+          )}
         />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Manual orders
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              (sold outside the site, entered by hand)
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <ManualOrderForm />
+
+          {manualEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No manual orders logged yet. Add one above and it will count
+              toward the revenue numbers at the top.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Profit</TableHead>
+                  <TableHead className="w-0" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {manualEntries.map((o) => (
+                  <TableRow key={o.id}>
+                    <TableCell className="whitespace-nowrap">
+                      {formatDate(o.soldAt)}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{o.customerName}</span>
+                      {o.notes && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {o.notes}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatMoney(o.amountCents)}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-brand-gold">
+                      {o.profitCents ? formatMoney(o.profitCents) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <ActionButton
+                        action={deleteManualOrder.bind(null, o.id)}
+                        variant="ghost"
+                        confirmText={`Remove the order for ${o.customerName}? The amount will come off the totals.`}
+                        successText="Order removed"
+                      >
+                        Remove
+                      </ActionButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
