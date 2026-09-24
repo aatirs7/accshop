@@ -4,6 +4,7 @@ import {
   bulkSales,
   commissions,
   deliverables,
+  manualOrders,
   orders,
   partners,
   products,
@@ -104,6 +105,40 @@ export async function recentBulkSales(limit = 20) {
     .select()
     .from(bulkSales)
     .orderBy(desc(bulkSales.soldAt), desc(bulkSales.createdAt))
+    .limit(limit);
+}
+
+/**
+ * One-off orders the owner logged by hand (see `manualOrders` in the schema),
+ * optionally limited to a window on `soldAt` with the same `{ from, to }`
+ * semantics as `revenueSummary`. These never pass through checkout, so the
+ * typed-in amount is taken as-is; profit is 0 unless the owner filled it in.
+ */
+export async function manualOrdersSummary(range?: DateRange) {
+  const since = range?.from ? gte(manualOrders.soldAt, range.from) : undefined;
+  const until = range?.to ? lt(manualOrders.soldAt, range.to) : undefined;
+  const filters = [since, until].filter(Boolean);
+  const [row] = await db
+    .select({
+      amountCents: sql<number>`coalesce(sum(${manualOrders.amountCents}), 0)`,
+      profitCents: sql<number>`coalesce(sum(${manualOrders.profitCents}), 0)`,
+      orderCount: count(),
+    })
+    .from(manualOrders)
+    .where(filters.length ? and(...filters) : undefined);
+  return {
+    amountCents: Number(row.amountCents),
+    profitCents: Number(row.profitCents),
+    orderCount: Number(row.orderCount),
+  };
+}
+
+/** Most recent hand-entered orders, newest first, for the Overview's log. */
+export async function recentManualOrders(limit = 20) {
+  return db
+    .select()
+    .from(manualOrders)
+    .orderBy(desc(manualOrders.soldAt), desc(manualOrders.createdAt))
     .limit(limit);
 }
 

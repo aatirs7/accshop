@@ -584,6 +584,29 @@ export const bulkSales = pgTable(
 );
 
 /**
+ * One-off orders the owner sold by hand, outside of checkout. Simpler than a
+ * bulk order: just who bought it, the day, and what they paid. `profitCents`
+ * is optional at entry (stored as 0 when left blank) so the owner can log the
+ * sale in seconds and still have the Overview fold the amount into revenue.
+ */
+export const manualOrders = pgTable(
+  "manual_orders",
+  {
+    id: id(),
+    customerName: text("customer_name").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    profitCents: integer("profit_cents").notNull().default(0),
+    // Day of the sale (stored as UTC midday); drives the Overview's range
+    // filter the same way `bulkSales.soldAt` does.
+    soldAt: timestamp("sold_at", { withTimezone: true, mode: "date" }).notNull(),
+    notes: text("notes"),
+    createdBy: text("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("manual_orders_sold_at_idx").on(t.soldAt)],
+);
+
+/**
  * Banned accounts the owner had to replace, logged as a cost so profit stays
  * accurate. Each replaced account costs a flat amount (see
  * `REPLACEMENT_COST_CENTS`); `costCents` snapshots the total at entry time so a
