@@ -6,6 +6,7 @@ import { deliverables as deliverablesTable, orders } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { formatDate, formatMoney } from "@/lib/format";
 import { pipelineStage } from "@/lib/orders/status";
+import { isAppRail, paymentMethodLabel } from "@/lib/payments/app-rails";
 import { env } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,7 +75,7 @@ export default async function OrderDetailPage({
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Ordered {formatDate(order.createdAt)} · {formatMoney(order.totalCents)}{" "}
-            via {order.paymentMethod === "zelle" ? "Zelle" : "card"}
+            via {paymentMethodLabel(order.paymentMethod)}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -107,22 +108,31 @@ export default async function OrderDetailPage({
         </ol>
       )}
 
-      {order.paymentStatus === "pending" && order.paymentMethod === "zelle" && (
-        <Card className="mt-8 border-brand-warning/40">
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 py-5">
-            <p className="text-sm">
-              We&apos;re waiting on your Zelle transfer. Amount:{" "}
-              <strong>{formatMoney(order.totalCents)}</strong>, memo:{" "}
-              <strong className="font-mono">{order.orderCode}</strong>
-            </p>
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/checkout/zelle/${order.orderCode}`}>
-                Payment instructions
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {order.paymentStatus === "pending" &&
+        (isAppRail(order.paymentMethod) ||
+          order.paymentMethod === "zelle") && (
+          <Card className="mt-8 border-brand-warning/40">
+            <CardContent className="flex flex-wrap items-center justify-between gap-4 py-5">
+              <p className="text-sm">
+                We&apos;re waiting on your{" "}
+                {paymentMethodLabel(order.paymentMethod)} payment. Amount:{" "}
+                <strong>{formatMoney(order.totalCents)}</strong>, note:{" "}
+                <strong className="font-mono">{order.orderCode}</strong>
+              </p>
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  href={
+                    isAppRail(order.paymentMethod)
+                      ? `/checkout/pay/${order.orderCode}`
+                      : `/checkout/zelle/${order.orderCode}`
+                  }
+                >
+                  Payment instructions
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Deliverables */}
       {order.paymentStatus === "paid" && (

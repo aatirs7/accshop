@@ -16,7 +16,7 @@ import { auth } from "@/lib/auth";
 import { resolveUnitPrice } from "@/lib/pricing";
 import { generateOrderCode } from "@/lib/orders/code";
 import { getProvider } from "@/lib/payments/provider";
-import { stripeConfigured } from "@/lib/payments/stripe";
+import { appRail } from "@/lib/payments/app-rails";
 import { audit } from "@/lib/audit";
 import { formatMoney } from "@/lib/format";
 import { sendPushToAdmins } from "@/lib/push/send";
@@ -26,7 +26,7 @@ const checkoutSchema = z.object({
   productSlug: z.string().min(1),
   quantity: z.coerce.number().int().min(1).max(100),
   email: z.string().trim().toLowerCase().email(),
-  method: z.enum(["stripe"]).default("stripe"),
+  method: z.enum(["paypal", "venmo", "cashapp"]).default("paypal"),
   ref: z.string().optional(),
   variantId: z.string().optional(),
   referralCode: z.string().trim().optional(),
@@ -52,14 +52,23 @@ export async function startCheckout(
         : "Please check your email and quantity.",
     };
   }
-  const { productSlug, quantity, ref, variantId, referralCode, promoCode } =
-    parsed.data;
+  const {
+    productSlug,
+    quantity,
+    ref,
+    variantId,
+    referralCode,
+    promoCode,
+    method,
+  } = parsed.data;
 
-  if (!stripeConfigured()) {
+  // Card checkout is paused, so the buyer pays from their own app and we
+  // confirm it by hand. A rail with no payment link set isn't orderable.
+  if (!appRail(method).payUrl) {
     return {
       ok: false,
       error:
-        "Card checkout is being set up and will be live shortly. Please check back soon or contact support to order.",
+        "That payment option isn't available right now. Please pick another one or contact support to order.",
     };
   }
 
@@ -173,7 +182,7 @@ export async function startCheckout(
           discountCode: appliedPromoCode,
           discountCents,
           totalCents,
-          paymentMethod: "stripe",
+          paymentMethod: method,
           source,
         })
         .returning();
@@ -194,6 +203,7 @@ export async function startCheckout(
       quantity,
       totalCents,
       variant: variant?.label ?? null,
+      method,
       referralCode: attributedCode,
       promoCode: appliedPromoCode,
       discountCents,
@@ -210,7 +220,7 @@ export async function startCheckout(
 
   let redirectUrl: string;
   try {
-    const initiated = await getProvider("stripe").initiate({
+    const initiated = await getProvider(method).initiate({
       id: order.id,
       orderCode: order.orderCode,
       quantity,

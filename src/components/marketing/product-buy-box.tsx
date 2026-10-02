@@ -31,12 +31,15 @@ export function ProductBuyBox({
   compareAtPriceCents,
   stockLabel,
   variants,
+  payMethods,
 }: {
   slug: string;
   basePriceCents: number;
   compareAtPriceCents: number | null;
   stockLabel: string;
   variants: BuyVariant[];
+  /** Live payment rails, e.g. "PayPal, Venmo, or Cash App". */
+  payMethods: string;
 }) {
   const [variantId, setVariantId] = useState(variants[0]?.id ?? "");
   const selected = variants.find((v) => v.id === variantId);
@@ -123,7 +126,7 @@ export function ProductBuyBox({
 
       <div className="gold-hairline my-6" />
       <ul className="space-y-3 text-sm text-muted-foreground">
-        <li>✓ Secure card checkout</li>
+        <li>✓ Pay with {payMethods}</li>
         <li>✓ Account emailed to you within 1-5 hours</li>
         <li>✓ 14-day replacement warranty</li>
       </ul>

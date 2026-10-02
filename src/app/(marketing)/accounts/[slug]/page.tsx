@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { TestimonialCard } from "@/components/marketing/testimonial-card";
 import { MarqueeRow } from "@/components/marketing/marquee-row";
 import { ProductGallery } from "@/components/marketing/product-gallery";
+import { activeRailsSentence } from "@/lib/payments/app-rails";
 import { ProductBuyBox } from "@/components/marketing/product-buy-box";
 
 export default async function ProductPage({
@@ -73,6 +74,7 @@ export default async function ProductPage({
                 label: v.label,
                 priceDeltaCents: v.priceDeltaCents,
               }))}
+              payMethods={activeRailsSentence()}
             />
           </div>
 

@@ -27,7 +27,7 @@ const sections = [
   },
   {
     title: "Processing time",
-    body: "Approved refunds are returned to your original payment method and typically show up within 5-10 business days, depending on your bank or card issuer.",
+    body: "Approved refunds are sent back through the same app you paid with (PayPal or Venmo) and typically show up within 5-10 business days, depending on that app and your bank.",
   },
 ];
 

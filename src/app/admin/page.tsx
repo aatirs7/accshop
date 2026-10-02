@@ -15,6 +15,7 @@ import { deleteBulkSale } from "@/actions/admin/bulk-sales";
 import { deleteManualOrder } from "@/actions/admin/manual-orders";
 import { deleteReplacement } from "@/actions/admin/replacements";
 import { formatDate, formatMoney } from "@/lib/format";
+import { paymentMethodLabel } from "@/lib/payments/app-rails";
 import {
   parseMetricsRange,
   rangeLabel,
@@ -430,7 +431,7 @@ export default async function AdminOverviewPage({
               return (
                 <div key={r.method}>
                   <div className="flex justify-between text-sm">
-                    <span className="capitalize">{r.method}</span>
+                    <span>{paymentMethodLabel(r.method)}</span>
                     <span>
                       {formatMoney(Number(r.revenueCents))} · {pct}%
                     </span>

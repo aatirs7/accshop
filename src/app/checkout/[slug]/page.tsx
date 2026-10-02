@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
+import { activeAppRails } from "@/lib/payments/app-rails";
 import { CheckoutForm, type PriceTier } from "@/components/checkout/checkout-form";
 import { Badge } from "@/components/ui/badge";
 
@@ -108,6 +109,10 @@ export default async function CheckoutPage({
               null
             }
             initialReferralCode={(code ?? ref ?? "").toUpperCase() || null}
+            methods={activeAppRails().map((r) => ({
+              id: r.id,
+              label: r.label,
+            }))}
           />
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">

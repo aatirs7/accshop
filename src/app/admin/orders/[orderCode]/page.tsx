@@ -4,10 +4,11 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { deliverables as deliverablesTable, orders, suppliers } from "@/lib/db/schema";
 import { formatDate, formatMoney } from "@/lib/format";
+import { paymentMethodLabel } from "@/lib/payments/app-rails";
 import { nextFulfillmentStatus, pipelineStage } from "@/lib/orders/status";
 import {
+  markManualPaid,
   markOrderDelivered,
-  markZellePaid,
   unlockReveal,
 } from "@/actions/admin/orders";
 import { revokeCredentials } from "@/actions/admin/credentials";
@@ -86,7 +87,8 @@ export default async function AdminOrderDetailPage({
               >
                 {order.user.email}
               </Link>{" "}
-              · placed {formatDate(order.createdAt)} · {order.paymentMethod}
+              · placed {formatDate(order.createdAt)} ·{" "}
+              {paymentMethodLabel(order.paymentMethod)}
               {order.partner && (
                 <>
                   {" "}
@@ -155,11 +157,11 @@ export default async function AdminOrderDetailPage({
           {order.paymentStatus === "pending" && (
             <>
               <p className="w-full text-sm text-muted-foreground">
-                Card payments confirm automatically via Stripe. Use this only if
-                the webhook is delayed or you took payment another way.
+                Confirm this once the money has landed in your{" "}
+                {paymentMethodLabel(order.paymentMethod)} account.
               </p>
               <PromptActionButton
-                action={markZellePaid.bind(null, order.id)}
+                action={markManualPaid.bind(null, order.id)}
                 promptText={`Payment reference for ${order.orderCode} (optional):`}
                 variant="default"
                 successText="Marked paid"

@@ -1,13 +1,13 @@
 # ACCSHOP
 
-Premium storefront + integrated CRM for selling established TikTok Affiliate accounts. Next.js (App Router) · Neon Postgres · Drizzle · Auth.js · Stripe + Zelle · Resend.
+Premium storefront + integrated CRM for selling established TikTok Affiliate accounts. Next.js (App Router) · Neon Postgres · Drizzle · Auth.js · PayPal/Venmo/Cash App + Stripe + Zelle · Resend.
 
 ## What's inside
 
 - **Storefront** — premium dark homepage, catalog (tiered, extensible), product pages, testimonials, warranty policy, contact, bulk-inquiry, and an application-gated partner program.
-- **Checkout** — card (Stripe Checkout) or Zelle (manual confirmation with a unique order-code memo). Guest-feel but account-backed: every order is tied to a user.
+- **Checkout** — pay-by-app: PayPal, Venmo, or Cash App. The buyer gets the owner's payment link plus a unique order code to put in the payment note, and the admin confirms it by hand. Card (Stripe Checkout) and Zelle are built and kept warm as alternate rails, but card checkout is currently paused, so the app rails are the only ones offered at checkout. Guest-feel but account-backed: every order is tied to a user.
 - **Customer dashboard** — order pipeline (Sourcing → Credentials ready → Delivered), **one-time encrypted credential reveal**, live warranty countdown, and warranty claims.
-- **Admin CRM** — orders workbench (advance fulfillment, mark Zelle paid, assign supplier + cost → live margin, attach/revoke credentials), customers with LTV, partners with wholesale pricing rules + commission ledger, suppliers, and queues for applications / bulk inquiries / warranty claims, plus a reporting overview (revenue, margin, **Stripe/Zelle rail mix**, source split, top LTV).
+- **Admin CRM** — orders workbench (advance fulfillment, confirm manual payments, assign supplier + cost → live margin, attach/revoke credentials), customers with LTV, partners with wholesale pricing rules + commission ledger, suppliers, and queues for applications / bulk inquiries / warranty claims, plus a reporting overview (revenue, margin, **payment rail mix**, source split, top LTV).
 
 ## Local development
 
@@ -43,16 +43,16 @@ npx tsx --env-file=.env.local scripts/verify-flows.ts  # end-to-end order lifecy
 
 1. Create a **Neon** project; set `DATABASE_URL` to its pooled connection string.
 2. Run `npm run db:migrate` against it (locally with that `DATABASE_URL`, or via CI).
-3. Set env vars in Vercel (see `.env.example`): `AUTH_SECRET`, `CREDENTIAL_KEY_V1` (store a copy in a password manager — losing it makes undelivered credentials unrecoverable), `ADMIN_EMAILS`, `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ZELLE_RECIPIENT_NAME`, `ZELLE_RECIPIENT_HANDLE`, `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (optional, enables admin push alerts — generate with `npx web-push generate-vapid-keys`).
+3. Set env vars in Vercel (see `.env.example`): `AUTH_SECRET`, `CREDENTIAL_KEY_V1` (store a copy in a password manager — losing it makes undelivered credentials unrecoverable), `ADMIN_EMAILS`, `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ZELLE_RECIPIENT_NAME`, `ZELLE_RECIPIENT_HANDLE`, `PAYPAL_PAY_URL`, `VENMO_PAY_URL`, `CASHAPP_PAY_URL` (each defaults to the owner's link; an empty value hides that option at checkout), `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (optional, enables admin push alerts — generate with `npx web-push generate-vapid-keys`).
 4. Add the Stripe webhook endpoint `→ /api/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`) and paste its signing secret into `STRIPE_WEBHOOK_SECRET`.
-5. `vercel.json` already schedules the daily Zelle-expiry cron; Vercel sends `CRON_SECRET` as the bearer token.
+5. `vercel.json` already schedules the daily unpaid-order expiry cron; Vercel sends `CRON_SECRET` as the bearer token.
 
 ## Payment note
 
-The payment layer is an interface (`src/lib/payments/provider.ts`); Stripe and Zelle are independent rails and all order/margin/commission state lives in our DB, so a Stripe pause never freezes the business. The admin reporting page surfaces the Stripe/Zelle revenue mix so processor concentration stays visible.
+The payment layer is an interface (`src/lib/payments/provider.ts`); Stripe, Zelle, and the pay-by-app rails are independent and all order/margin/commission state lives in our DB, so a Stripe pause never freezes the business — which is exactly why checkout can run on PayPal/Venmo/Cash App alone. The admin reporting page surfaces the revenue mix per rail so processor concentration stays visible.
 
 ## Before launch
 
 - Replace the **sample testimonials** (seeded, flagged `[SAMPLE]`) with real customer quotes in Admin → Testimonials.
-- Set the real Zelle recipient details.
+- Set the real Zelle recipient details, and `CASHAPP_PAY_URL` if you want Cash App offered at checkout.
 - Point `APP_URL` / `EMAIL_FROM` at your domain.

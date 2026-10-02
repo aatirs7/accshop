@@ -20,6 +20,11 @@ export interface CheckoutVariant {
   priceDeltaCents: number;
 }
 
+export interface CheckoutMethod {
+  id: string;
+  label: string;
+}
+
 export function CheckoutForm(props: {
   productSlug: string;
   retailUnitCents: number;
@@ -30,9 +35,11 @@ export function CheckoutForm(props: {
   variants: CheckoutVariant[];
   initialVariantId: string | null;
   initialReferralCode: string | null;
+  methods: CheckoutMethod[];
 }) {
   const [quantity, setQuantity] = useState(1);
   const [variantId, setVariantId] = useState(props.initialVariantId ?? "");
+  const [method, setMethod] = useState(props.methods[0]?.id ?? "");
   const [promoCode, setPromoCode] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [state, action, pending] = useActionState<CheckoutResult | null, FormData>(
@@ -48,6 +55,7 @@ export function CheckoutForm(props: {
   }, [quantity, props.partnerTiers, props.retailUnitCents]);
 
   const variant = props.variants.find((v) => v.id === variantId);
+  const selectedMethod = props.methods.find((m) => m.id === method);
   const unitCents = baseUnit + (variant?.priceDeltaCents ?? 0);
   const subtotal = unitCents * quantity;
 
@@ -69,8 +77,8 @@ export function CheckoutForm(props: {
         <input type="hidden" name="ref" value={props.refPartner} />
       )}
       <input type="hidden" name="variantId" value={variantId} />
-      {/* Card (Stripe) is the only rail. */}
-      <input type="hidden" name="method" value="stripe" />
+      {/* Pay-by-app rails only, card checkout is paused. */}
+      <input type="hidden" name="method" value={method} />
 
       <div className="space-y-2">
         <Label htmlFor="quantity">Quantity</Label>
@@ -172,10 +180,38 @@ export function CheckoutForm(props: {
         )}
       </div>
 
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">How would you like to pay?</legend>
+        {props.methods.map((m) => (
+          <label
+            key={m.id}
+            className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm transition-colors ${
+              method === m.id
+                ? "border-brand-gold/60 bg-brand-gold/5"
+                : "border-border/60 hover:border-border"
+            }`}
+          >
+            <input
+              type="radio"
+              name="methodChoice"
+              value={m.id}
+              checked={method === m.id}
+              onChange={() => setMethod(m.id)}
+              className="accent-[oklch(0.83_0.115_85)]"
+            />
+            {m.label}
+          </label>
+        ))}
+      </fieldset>
+
       <div className="rounded-lg border border-brand-gold/30 bg-brand-gold/5 p-4 space-y-1.5">
-        <p className="text-sm font-medium">Secure card checkout</p>
+        <p className="text-sm font-medium">
+          Pay with {selectedMethod?.label ?? "your payment app"}
+        </p>
         <p className="text-xs text-muted-foreground">
-          You&apos;ll be taken to our secure card checkout to pay.
+          Next you&apos;ll get a payment link and your order code. Send the
+          total with the code in the note, and we confirm it by hand, usually
+          within a few hours.
         </p>
         <p className="text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Estimated delivery:</span>{" "}
@@ -250,10 +286,12 @@ export function CheckoutForm(props: {
       <Button
         type="submit"
         size="lg"
-        disabled={pending || !agreed}
+        disabled={pending || !agreed || !method}
         className="w-full"
       >
-        {pending ? "Preparing your order…" : "Continue to secure checkout"}
+        {pending
+          ? "Preparing your order…"
+          : `Continue to ${selectedMethod?.label ?? "payment"}`}
       </Button>
     </form>
   );

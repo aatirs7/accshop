@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminFailedOrdersPage() {
-  // Checkout rows are created the moment someone starts paying, before
-  // Stripe confirms anything, so this is whoever never finished paying.
+  // Checkout rows are created the moment someone starts paying, before the
+  // payment is confirmed, so this is whoever never finished paying.
   const failedOrders = await db.query.orders.findMany({
     where: or(
       eq(orders.paymentStatus, "cancelled"),
@@ -41,8 +41,8 @@ export default async function AdminFailedOrdersPage() {
           Failed / incomplete checkouts
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Started checkout but never paid, or the card payment didn&apos;t go
-          through. No money was collected on these.
+          Started checkout but never sent the payment, or it was never
+          confirmed. No money was collected on these.
         </p>
       </div>
 
