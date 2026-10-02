@@ -40,7 +40,7 @@ const envSchema = z.object({
   // an empty string to hide that option at checkout.
   PAYPAL_PAY_URL: z.string().default("https://www.paypal.me/AashirSiddiqui"),
   VENMO_PAY_URL: z.string().default("https://venmo.com/u/Aashir-Siddiqui"),
-  CASHAPP_PAY_URL: z.string().default(""),
+  CASHAPP_PAY_URL: z.string().default("https://cash.app/$AashirSiddiqui"),
   // Support address shown to buyers post-purchase and in emails.
   SUPPORT_EMAIL: z.string().default("aashirsiddiqui13@gmail.com"),
   CRON_SECRET: z.string().optional(),

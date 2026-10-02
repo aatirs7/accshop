@@ -72,20 +72,26 @@ function appRailProviders(): Record<AppRail, PaymentProvider> {
     async initiate(order) {
       const rail = appRail(id);
       const instructionsUrl = `${env.APP_URL}/checkout/pay/${order.orderCode}`;
-      // Instructions also go by email so they survive a closed tab.
-      await sendEmail({
-        to: order.customerEmail,
-        subject: `Complete your order ${order.orderCode} via ${rail.label}`,
-        react: AppPaymentInstructionsEmail({
-          orderCode: order.orderCode,
-          totalFormatted: formatMoney(order.totalCents),
-          methodLabel: rail.label,
-          noteLabel: rail.noteLabel,
-          payUrl: rail.payUrl,
-          instructionsUrl,
-        }),
-        text: `Send ${formatMoney(order.totalCents)} with ${rail.label} (${rail.payUrl}). Put order code ${order.orderCode} in the ${rail.noteLabel}. Details: ${instructionsUrl}`,
-      });
+      // Instructions also go by email so they survive a closed tab. The
+      // on-page instructions are the primary copy, so a mail hiccup must not
+      // throw here: that would bubble up and cancel a perfectly good order.
+      try {
+        await sendEmail({
+          to: order.customerEmail,
+          subject: `Complete your order ${order.orderCode} via ${rail.label}`,
+          react: AppPaymentInstructionsEmail({
+            orderCode: order.orderCode,
+            totalFormatted: formatMoney(order.totalCents),
+            methodLabel: rail.label,
+            noteLabel: rail.noteLabel,
+            payUrl: rail.payUrl,
+            instructionsUrl,
+          }),
+          text: `Send ${formatMoney(order.totalCents)} with ${rail.label} (${rail.payUrl}). Put order code ${order.orderCode} in the ${rail.noteLabel}. Details: ${instructionsUrl}`,
+        });
+      } catch (err) {
+        console.error(`App-rail instructions email failed for ${order.orderCode}`, err);
+      }
       return { redirectUrl: instructionsUrl };
     },
   });
