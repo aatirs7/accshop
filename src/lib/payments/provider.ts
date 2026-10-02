@@ -1,10 +1,14 @@
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { sendEmail } from "@/lib/email/resend";
-import { ZelleInstructionsEmail } from "@/lib/email/templates";
+import {
+  AppPaymentInstructionsEmail,
+  ZelleInstructionsEmail,
+} from "@/lib/email/templates";
+import { appRail, type AppRail } from "./app-rails";
 import { createStripeCheckout } from "./stripe";
 
-export type PaymentMethod = "stripe" | "zelle";
+export type PaymentMethod = "stripe" | "zelle" | AppRail;
 
 export interface InitiateOrder {
   id: string;
@@ -54,7 +58,45 @@ const providers: Record<PaymentMethod, PaymentProvider> = {
       return { redirectUrl: instructionsUrl };
     },
   },
+  ...appRailProviders(),
 };
+
+/**
+ * PayPal / Venmo / Cash App all behave the same way: we hold the order, point
+ * the buyer at the owner's payment link with the order code as the note, and
+ * the admin confirms the money landed.
+ */
+function appRailProviders(): Record<AppRail, PaymentProvider> {
+  const build = (id: AppRail): PaymentProvider => ({
+    id,
+    async initiate(order) {
+      const rail = appRail(id);
+      const instructionsUrl = `${env.APP_URL}/checkout/pay/${order.orderCode}`;
+      // Instructions also go by email so they survive a closed tab. The
+      // on-page instructions are the primary copy, so a mail hiccup must not
+      // throw here: that would bubble up and cancel a perfectly good order.
+      try {
+        await sendEmail({
+          to: order.customerEmail,
+          subject: `Complete your order ${order.orderCode} via ${rail.label}`,
+          react: AppPaymentInstructionsEmail({
+            orderCode: order.orderCode,
+            totalFormatted: formatMoney(order.totalCents),
+            methodLabel: rail.label,
+            noteLabel: rail.noteLabel,
+            payUrl: rail.payUrl,
+            instructionsUrl,
+          }),
+          text: `Send ${formatMoney(order.totalCents)} with ${rail.label} (${rail.payUrl}). Put order code ${order.orderCode} in the ${rail.noteLabel}. Details: ${instructionsUrl}`,
+        });
+      } catch (err) {
+        console.error(`App-rail instructions email failed for ${order.orderCode}`, err);
+      }
+      return { redirectUrl: instructionsUrl };
+    },
+  });
+  return { paypal: build("paypal"), venmo: build("venmo"), cashapp: build("cashapp") };
+}
 
 export function getProvider(method: PaymentMethod): PaymentProvider {
   return providers[method];

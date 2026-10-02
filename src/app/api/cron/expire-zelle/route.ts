@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, inArray, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { env } from "@/lib/env";
@@ -8,8 +8,9 @@ import { audit } from "@/lib/audit";
 export const runtime = "nodejs";
 
 /**
- * Daily Vercel cron: cancel Zelle orders left unpaid for more than 48 hours
- * so the admin's awaiting-payment queue stays honest.
+ * Daily Vercel cron: cancel hand-confirmed orders (Zelle, PayPal, Venmo,
+ * Cash App) left unpaid for more than 48 hours so the admin's
+ * awaiting-payment queue stays honest.
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
     .set({ paymentStatus: "cancelled" })
     .where(
       and(
-        eq(orders.paymentMethod, "zelle"),
+        inArray(orders.paymentMethod, ["zelle", "paypal", "venmo", "cashapp"]),
         eq(orders.paymentStatus, "pending"),
         lt(orders.createdAt, cutoff),
       ),
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
 
   for (const o of expired) {
     await audit({
-      action: "order.expired_zelle",
+      action: "order.expired_unpaid",
       entityType: "order",
       entityId: o.id,
       metadata: { orderCode: o.orderCode },

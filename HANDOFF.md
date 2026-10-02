@@ -1,7 +1,7 @@
 # ACCSHOP — Handoff
 
 Premium storefront + integrated CRM for selling established TikTok Affiliate accounts.
-Next.js 16 (App Router) · Neon Postgres · Drizzle · Auth.js · Stripe + Zelle · Resend.
+Next.js 16 (App Router) · Neon Postgres · Drizzle · Auth.js · PayPal/Venmo/Cash App + Stripe + Zelle · Resend.
 
 ## Status: deployed & live
 
@@ -13,21 +13,22 @@ Next.js 16 (App Router) · Neon Postgres · Drizzle · Auth.js · Stripe + Zelle
 ## What works right now
 
 - Full storefront: home, catalog, product, testimonials, warranty, contact, bulk inquiry, partner program
-- Checkout: Stripe Checkout + manual Zelle rail (unique order-code memo)
+- Checkout: pay-by-app rails (PayPal, Venmo, Cash App) with a unique order-code note, admin-confirmed. Stripe Checkout and the Zelle rail are still wired up but card checkout is paused, so checkout only offers the app rails
 - Customer dashboard: order pipeline, one-time encrypted credential reveal, warranty countdown, claims
-- Admin CRM: orders workbench, customers/LTV, partners + pricing rules + commissions, suppliers, application/inquiry/claim queues, reporting (revenue/margin, Stripe vs Zelle rail mix)
+- Admin CRM: orders workbench, customers/LTV, partners + pricing rules + commissions, suppliers, application/inquiry/claim queues, reporting (revenue/margin, rail mix per payment method)
 - Manual order log on Admin → Overview: the owner types in a customer name, date, and amount (profit optional) for one-off orders taken outside the site; the amount is added into the Overview's revenue cards for the selected period and all time (`manual_orders` table, `src/actions/admin/manual-orders.ts`)
 - Manual bulk-order log on Admin → Overview: the owner types in coach name, account count, revenue, and profit for off-site bulk supply deals; those amounts are added into the Overview's revenue/profit cards for the selected period and all time (`bulk_sales` table, `src/actions/admin/bulk-sales.ts`)
 - Auth gating verified: `/dashboard` + `/admin` redirect unauthenticated users; non-admins get 404 on `/admin`
-- Cron (`/api/cron/expire-zelle`) protected (401 without secret); Stripe webhook route live
+- Cron (`/api/cron/expire-zelle`) protected (401 without secret), sweeps any unpaid manual order after 48h; Stripe webhook route live
 
 ## Blockers before real customers can use it
 
 These are **"drop in the key"** items — infra is wired, just add values in Vercel → Settings → Environment Variables, then redeploy (`vercel --prod`).
 
 1. **`RESEND_API_KEY`** + **`EMAIL_FROM`** — REQUIRED FOR LOGIN. Without it, magic-link sign-in emails print to Vercel function logs instead of sending, so no one (including admin) can actually sign in on production. Use a verified sending domain in `EMAIL_FROM`.
-2. **`STRIPE_SECRET_KEY`** + **`STRIPE_WEBHOOK_SECRET`** — enables card checkout. Register the webhook at `https://accshop-six.vercel.app/api/webhooks/stripe` for events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`. Note: Stripe's ToS restricts social-account sales — Zelle is the independent fallback rail.
-3. **`ZELLE_RECIPIENT_NAME`** + **`ZELLE_RECIPIENT_HANDLE`** — real Zelle details shown on the payment-instructions page.
+2. **`CASHAPP_PAY_URL`** — the owner's Cash App link (e.g. `https://cash.app/$cashtag`). PayPal and Venmo links are already baked in as defaults (`src/lib/env.ts`); Cash App is the only one still missing, and that option stays hidden at checkout until it's set.
+3. **`STRIPE_SECRET_KEY`** + **`STRIPE_WEBHOOK_SECRET`** — only needed to bring card checkout back. Register the webhook at `https://accshop-six.vercel.app/api/webhooks/stripe` for events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`. Note: Stripe's ToS restricts social-account sales — the app rails and Zelle are the independent fallbacks.
+4. **`ZELLE_RECIPIENT_NAME`** + **`ZELLE_RECIPIENT_HANDLE`** — real Zelle details shown on the payment-instructions page.
 
 Push alerts no longer need a Vercel env var step — `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (`src/lib/env.ts`) now default to a baked-in key pair, so the "Enable alerts" button in the admin panel works immediately; just tap it in the admin panel on your phone (works best after adding the admin panel to your home screen). Set your own pair in Vercel only if you need to invalidate existing subscriptions.
 
@@ -62,7 +63,7 @@ Scripts: `npm test` (unit), `npm run typecheck`, `npm run db:generate|migrate|pu
 
 - **Dev DB is embedded PGlite** (`./.pglite`); prod is Neon. `@electric-sql/pglite` is in `serverExternalPackages` (next.config.ts) or its WASM fails to load. PGlite is single-process — stop the dev server before running seed/verify scripts.
 - **Credentials** are AES-256-GCM encrypted with AAD = deliverableId (`src/lib/crypto/credentials.ts`). Delivery is by email (`emailAccountToCustomer` in `src/actions/admin/credentials.ts`), which decrypts and sends the plaintext to the buyer, then marks the order delivered. A legacy dashboard reveal-once flow (`UPDATE ... WHERE reveal_locked=false RETURNING`) still exists for in-flight orders started before the switch to email delivery; admin can unlock a re-reveal there (audited).
-- **Both payment rails converge on `markOrderPaid()`** (`src/lib/payments/mark-paid.ts`). The Stripe webhook is the sole paid-authority (idempotent via `webhook_events`); Zelle is admin-confirmed. Referral commission accrues only for `source='referral'`, never wholesale partner buys.
+- **Every payment rail converges on `markOrderPaid()`** (`src/lib/payments/mark-paid.ts`). The Stripe webhook is the sole paid-authority for card orders (idempotent via `webhook_events`); Zelle, PayPal, Venmo, and Cash App are admin-confirmed from the Orders workbench. Rail links/labels live in `src/lib/payments/app-rails.ts`. Referral commission accrues only for `source='referral'`, never wholesale partner buys.
 - **Payment layer is an interface** (`src/lib/payments/provider.ts`) so a replacement processor is a one-file swap; all order/margin/commission state lives in our DB, so a Stripe freeze never freezes the business.
 - **Warranty (30-day) is derived** from `deliveredAt`, never stored (`src/lib/orders/status.ts`).
 - **Auth:** Auth.js v5 magic-link, DB sessions. `requireAdmin()` 404s non-admins (doesn't advertise the panel). `ADMIN_EMAILS` auto-promotes to admin on sign-in. Cheap redirect in `src/proxy.ts` (Next 16 renamed middleware → proxy); authoritative checks are server-side in every page/action.

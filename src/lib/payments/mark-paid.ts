@@ -8,6 +8,7 @@ import {
   emailCaptures,
   orders,
   partners,
+  paymentMethod,
   payments,
 } from "@/lib/db/schema";
 import { adminEmails, env } from "@/lib/env";
@@ -21,16 +22,17 @@ import { audit } from "@/lib/audit";
 import { sendPushToAdmins } from "@/lib/push/send";
 
 /**
- * The single paid-transition for BOTH rails: the Stripe webhook and the
- * admin's manual Zelle confirmation converge here so downstream behavior
- * (deliverables, commission, emails) is identical. Idempotent: an
- * already-paid order is a no-op.
+ * The single paid-transition for EVERY rail: the Stripe webhook and the
+ * admin's manual confirmation (Zelle, PayPal, Venmo, Cash App) converge here
+ * so downstream behavior (deliverables, commission, emails) is identical.
+ * Idempotent: an already-paid order is a no-op.
  */
 export async function markOrderPaid(
   orderId: string,
   opts: {
-    method: "stripe" | "zelle";
+    method: (typeof paymentMethod.enumValues)[number];
     stripePaymentIntentId?: string;
+    /** Receipt/confirmation number for any hand-confirmed rail. */
     zelleReference?: string;
     confirmedByUserId?: string;
   },

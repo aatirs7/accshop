@@ -26,8 +26,8 @@ export const FAQS: FaqEntry[] = [
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept secure card payments (credit and debit) at checkout. Your account details are emailed to you within 1-5 hours of payment clearing.",
-    keywords: ["pay", "payment", "card", "zelle", "crypto", "paypal", "method", "checkout", "stripe", "debit", "credit"],
+      "You can pay with PayPal or Venmo, whichever you prefer. Pick one at checkout and we'll give you the payment link plus your order code to put in the note. Your account details are emailed to you within 1-5 hours of payment clearing.",
+    keywords: ["pay", "payment", "card", "zelle", "crypto", "paypal", "venmo", "cashapp", "cash app", "method", "checkout", "stripe", "debit", "credit"],
   },
   {
     question: "What does the warranty cover?",

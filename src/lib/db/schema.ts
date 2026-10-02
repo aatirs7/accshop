@@ -37,7 +37,15 @@ const createdAt = () =>
 // ---------------------------------------------------------------------------
 
 export const userRole = pgEnum("user_role", ["customer", "partner", "admin"]);
-export const paymentMethod = pgEnum("payment_method", ["stripe", "zelle"]);
+// "stripe" is the card rail (currently paused); the rest are manual rails the
+// admin confirms by hand after the buyer pays from their own app.
+export const paymentMethod = pgEnum("payment_method", [
+  "stripe",
+  "zelle",
+  "paypal",
+  "venmo",
+  "cashapp",
+]);
 export const paymentStatus = pgEnum("payment_status", [
   "pending",
   "paid",

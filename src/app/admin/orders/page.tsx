@@ -5,7 +5,8 @@ import { orders } from "@/lib/db/schema";
 import { demoUserIds } from "@/lib/db/queries/demo-exclusion";
 import { formatDate, formatMoney } from "@/lib/format";
 import { pipelineStage } from "@/lib/orders/status";
-import { markZellePaid, resendZelleInstructions } from "@/actions/admin/orders";
+import { markManualPaid, resendPaymentInstructions } from "@/actions/admin/orders";
+import { paymentMethodLabel } from "@/lib/payments/app-rails";
 import { ActionButton, PromptActionButton } from "@/components/admin/action-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +23,10 @@ export default async function AdminOrdersPage() {
   const demoIds = await demoUserIds();
   const notDemo = demoIds.length ? notInArray(orders.userId, demoIds) : undefined;
 
-  const [zelleQueue, paidOrders, [{ value: failedCount }]] = await Promise.all([
+  const [paymentQueue, paidOrders, [{ value: failedCount }]] = await Promise.all([
     db.query.orders.findMany({
       where: and(
-        eq(orders.paymentMethod, "zelle"),
+        inArray(orders.paymentMethod, ["zelle", "paypal", "venmo", "cashapp"]),
         eq(orders.paymentStatus, "pending"),
         notDemo,
       ),
@@ -62,35 +63,39 @@ export default async function AdminOrdersPage() {
       <div>
         <h1 className="font-display text-3xl font-medium">Orders</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Confirm Zelle payments, advance fulfillment, deliver credentials.
+          Confirm payments, advance fulfillment, deliver credentials.
         </p>
       </div>
 
-      {zelleQueue.length > 0 && (
+      {paymentQueue.length > 0 && (
         <Card className="border-brand-warning/40">
           <CardHeader>
             <CardTitle className="text-base text-brand-warning">
-              Zelle, awaiting payment ({zelleQueue.length})
+              Awaiting payment ({paymentQueue.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Code (memo)</TableHead>
+                  <TableHead>Code (note)</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Paying by</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Placed</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {zelleQueue.map((o) => (
+                {paymentQueue.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell className="font-mono text-brand-gold">
                       {o.orderCode}
                     </TableCell>
                     <TableCell>{o.user.email}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {paymentMethodLabel(o.paymentMethod)}
+                    </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatMoney(o.totalCents)}
                     </TableCell>
@@ -99,8 +104,8 @@ export default async function AdminOrdersPage() {
                     </TableCell>
                     <TableCell className="space-x-2 text-right">
                       <PromptActionButton
-                        action={markZellePaid.bind(null, o.id)}
-                        promptText={`Zelle reference / confirmation number for ${o.orderCode} (${formatMoney(o.totalCents)}):`}
+                        action={markManualPaid.bind(null, o.id)}
+                        promptText={`${paymentMethodLabel(o.paymentMethod)} reference / confirmation number for ${o.orderCode} (${formatMoney(o.totalCents)}):`}
                         variant="default"
                         successText="Marked paid, fulfillment started"
                         allowEmpty
@@ -108,7 +113,7 @@ export default async function AdminOrdersPage() {
                         Mark paid
                       </PromptActionButton>
                       <ActionButton
-                        action={resendZelleInstructions.bind(null, o.id)}
+                        action={resendPaymentInstructions.bind(null, o.id)}
                         successText="Instructions re-sent"
                       >
                         Re-send

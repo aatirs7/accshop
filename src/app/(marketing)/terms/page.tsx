@@ -15,7 +15,7 @@ const sections = [
   },
   {
     title: "Payment",
-    body: "Orders are paid by card (processed securely by Stripe) or Zelle. Card charges are captured at checkout; Zelle orders are held for 48 hours pending manual confirmation. Prices are set at the time of order.",
+    body: "Orders are paid with PayPal or Venmo, using the payment link shown at checkout. Put your order code in the payment note so we can match it. Payments are confirmed manually and your order is held for 48 hours while we confirm. Prices are set at the time of order.",
   },
   {
     title: "Delivery",

@@ -7,7 +7,7 @@ export const metadata = { title: "Privacy Policy" };
 const sections = [
   {
     title: "What we collect",
-    body: "Your email address, order history, and any details you submit through a warranty claim or contact form. If you pay by card, Stripe processes and stores your payment details, we never see or store your full card number.",
+    body: "Your email address, order history, and any details you submit through a warranty claim or contact form. Payments are made inside your own payment app (PayPal or Venmo), so we only ever see what that app shows us about the transfer, never your card or bank details.",
   },
   {
     title: "How we use it",
@@ -19,7 +19,7 @@ const sections = [
   },
   {
     title: "Who we share it with",
-    body: "Only the providers needed to run the store: Stripe for card payments, our email provider for order and account delivery emails, and our hosting provider. Each only receives what they need to do their job.",
+    body: "Only the providers needed to run the store: the payment app you choose to pay with (PayPal or Venmo), our email provider for order and account delivery emails, and our hosting provider. Each only receives what they need to do their job.",
   },
   {
     title: "Account credentials",

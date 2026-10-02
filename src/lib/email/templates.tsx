@@ -168,6 +168,47 @@ export function ZelleInstructionsEmail(props: {
   );
 }
 
+export function AppPaymentInstructionsEmail(props: {
+  orderCode: string;
+  totalFormatted: string;
+  methodLabel: string;
+  noteLabel: string;
+  payUrl: string;
+  instructionsUrl: string;
+}) {
+  return (
+    <Shell
+      preview={`Complete your ACCSHOP order ${props.orderCode}`}
+      heading={`Complete your payment with ${props.methodLabel}`}
+    >
+      <Text style={styles.text}>
+        Send <strong>{props.totalFormatted}</strong> with {props.methodLabel}:
+      </Text>
+      <Section style={{ margin: "20px 0" }}>
+        <Button style={styles.button} href={props.payUrl}>
+          Pay with {props.methodLabel}
+        </Button>
+      </Section>
+      <Text style={styles.text}>
+        <strong>Important:</strong> put this order code in the payment{" "}
+        {props.noteLabel} so we can match your payment:
+      </Text>
+      <Section style={{ margin: "20px 0" }}>
+        <Text style={styles.code}>{props.orderCode}</Text>
+      </Section>
+      <Text style={styles.text}>
+        We confirm {props.methodLabel} payments manually, usually within a few
+        hours. Your order is held for 48 hours.
+      </Text>
+      <Section style={{ margin: "24px 0" }}>
+        <Button style={styles.button} href={props.instructionsUrl}>
+          View payment instructions
+        </Button>
+      </Section>
+    </Shell>
+  );
+}
+
 export function CredentialsReadyEmail(props: {
   orderCode: string;
   dashboardUrl: string;

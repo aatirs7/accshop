@@ -35,6 +35,12 @@ const envSchema = z.object({
   APP_URL: z.string().default("http://localhost:3000"),
   ZELLE_RECIPIENT_NAME: z.string().default("ACCSHOP"),
   ZELLE_RECIPIENT_HANDLE: z.string().default("payments@accshop.example"),
+  // Pay-by-app rails (PayPal / Venmo / Cash App). These are the live rails
+  // while card checkout is paused. Each is the owner's own payment link, set
+  // an empty string to hide that option at checkout.
+  PAYPAL_PAY_URL: z.string().default("https://www.paypal.me/AashirSiddiqui"),
+  VENMO_PAY_URL: z.string().default("https://venmo.com/u/Aashir-Siddiqui"),
+  CASHAPP_PAY_URL: z.string().default("https://cash.app/$AashirSiddiqui"),
   // Support address shown to buyers post-purchase and in emails.
   SUPPORT_EMAIL: z.string().default("aashirsiddiqui13@gmail.com"),
   CRON_SECRET: z.string().optional(),

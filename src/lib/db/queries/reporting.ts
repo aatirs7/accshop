@@ -174,7 +174,7 @@ export async function recentReplacements(limit = 20) {
     .limit(limit);
 }
 
-/** Stripe vs Zelle revenue split, the processor-risk gauge. */
+/** Revenue split per payment rail, the processor-risk gauge. */
 export async function railMix() {
   const notDemo = await excludeDemo();
   return db

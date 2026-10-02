@@ -15,9 +15,11 @@ import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/format";
 import { sendEmail } from "@/lib/email/resend";
 import {
+  AppPaymentInstructionsEmail,
   CredentialsReadyEmail,
   ZelleInstructionsEmail,
 } from "@/lib/email/templates";
+import { appRail, isAppRail, paymentMethodLabel } from "@/lib/payments/app-rails";
 import { audit } from "@/lib/audit";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -68,10 +70,11 @@ export async function markOrderDelivered(
 }
 
 /**
- * Manually mark an order paid — the safety valve if the Stripe webhook is
- * delayed or not yet configured. Converges on the same markOrderPaid path.
+ * Confirm a manually-paid order (Zelle, PayPal, Venmo, Cash App), and the
+ * safety valve if the Stripe webhook is delayed. Converges on the same
+ * markOrderPaid path.
  */
-export async function markZellePaid(
+export async function markManualPaid(
   orderId: string,
   reference: string,
 ): Promise<ActionResult> {
@@ -83,10 +86,12 @@ export async function markZellePaid(
   try {
     await markOrderPaid(orderId, {
       method: order.paymentMethod,
+      // One generic "they sent it, here's the receipt" field for every
+      // hand-confirmed rail.
       zelleReference:
-        order.paymentMethod === "zelle"
-          ? reference.trim() || "unreferenced"
-          : undefined,
+        order.paymentMethod === "stripe"
+          ? undefined
+          : reference.trim() || "unreferenced",
       confirmedByUserId: admin.id,
     });
   } catch (err) {
@@ -244,8 +249,8 @@ export async function saveAdminNotes(
   return { ok: true };
 }
 
-/** Re-send Zelle instructions for a pending order. */
-export async function resendZelleInstructions(
+/** Re-send payment instructions for a pending hand-confirmed order. */
+export async function resendPaymentInstructions(
   orderId: string,
 ): Promise<ActionResult> {
   await requireAdmin();
@@ -253,20 +258,45 @@ export async function resendZelleInstructions(
     where: eq(orders.id, orderId),
     with: { user: true },
   });
-  if (!order || order.paymentMethod !== "zelle" || order.paymentStatus !== "pending") {
-    return { ok: false, error: "Not a pending Zelle order." };
+  if (!order || order.paymentStatus !== "pending") {
+    return { ok: false, error: "This order isn't awaiting payment." };
+  }
+  const totalFormatted = formatMoney(order.totalCents);
+  if (isAppRail(order.paymentMethod)) {
+    const rail = appRail(order.paymentMethod);
+    const instructionsUrl = `${env.APP_URL}/checkout/pay/${order.orderCode}`;
+    await sendEmail({
+      to: order.user.email,
+      subject: `Complete your order ${order.orderCode} via ${rail.label}`,
+      react: AppPaymentInstructionsEmail({
+        orderCode: order.orderCode,
+        totalFormatted,
+        methodLabel: rail.label,
+        noteLabel: rail.noteLabel,
+        payUrl: rail.payUrl,
+        instructionsUrl,
+      }),
+      text: `Send ${totalFormatted} with ${rail.label} (${rail.payUrl}), ${rail.noteLabel} ${order.orderCode}.`,
+    });
+    return { ok: true };
+  }
+  if (order.paymentMethod !== "zelle") {
+    return {
+      ok: false,
+      error: `There are no instructions to re-send for a ${paymentMethodLabel(order.paymentMethod)} order.`,
+    };
   }
   await sendEmail({
     to: order.user.email,
     subject: `Complete your order ${order.orderCode} via Zelle`,
     react: ZelleInstructionsEmail({
       orderCode: order.orderCode,
-      totalFormatted: formatMoney(order.totalCents),
+      totalFormatted,
       recipientName: env.ZELLE_RECIPIENT_NAME,
       recipientHandle: env.ZELLE_RECIPIENT_HANDLE,
       instructionsUrl: `${env.APP_URL}/checkout/zelle/${order.orderCode}`,
     }),
-    text: `Send ${formatMoney(order.totalCents)} via Zelle to ${env.ZELLE_RECIPIENT_NAME} (${env.ZELLE_RECIPIENT_HANDLE}), memo ${order.orderCode}.`,
+    text: `Send ${totalFormatted} via Zelle to ${env.ZELLE_RECIPIENT_NAME} (${env.ZELLE_RECIPIENT_HANDLE}), memo ${order.orderCode}.`,
   });
   return { ok: true };
 }
