@@ -1,6 +1,7 @@
 import {
   boolean,
   customType,
+  date,
   index,
   integer,
   jsonb,
@@ -633,6 +634,84 @@ export const replacements = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("replacements_replaced_at_idx").on(t.replacedAt)],
+);
+
+// ---------------------------------------------------------------------------
+// Daily Operations — the owner's private daily workspace (tasks, a manual
+// fulfillment tracker, and notes). All three are keyed on a plain `YYYY-MM-DD`
+// day string (not a timestamp) so date comparisons are exact and timezone
+// free. `op_fulfillment_status` is distinct from the order-pipeline's
+// `fulfillment_status`; this tracker is a manual to-do list, not the automated
+// delivery flow.
+// ---------------------------------------------------------------------------
+export const taskPriority = pgEnum("task_priority", ["low", "medium", "high"]);
+export const opFulfillmentStatus = pgEnum("op_fulfillment_status", [
+  "pending",
+  "in_progress",
+  "fulfilled",
+]);
+
+/** A to-do for one specific day. Tasks do not carry forward between days. */
+export const dailyTasks = pgTable(
+  "daily_tasks",
+  {
+    id: id(),
+    opDate: date("op_date", { mode: "string" }).notNull(),
+    description: text("description").notNull(),
+    priority: taskPriority("priority"), // null = no priority set
+    done: boolean("done").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdBy: text("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("daily_tasks_op_date_idx").on(t.opDate)],
+);
+
+/**
+ * A customer whose order still needs delivering, tracked by hand. `opDate` is
+ * the day it was added; `fulfilledOn` is the day it was marked fulfilled (taken
+ * from the date the owner was viewing, never wall-clock). An item is
+ * "outstanding as of day D" when `op_date <= D and (fulfilled_on is null or
+ * fulfilled_on > D)`, so a still-open item carries forward onto later days and
+ * past days always show exactly what was open then.
+ */
+export const dailyFulfillments = pgTable(
+  "daily_fulfillments",
+  {
+    id: id(),
+    opDate: date("op_date", { mode: "string" }).notNull(),
+    customerName: text("customer_name").notNull(),
+    item: text("item").notNull(),
+    quantity: integer("quantity"), // optional
+    notes: text("notes"),
+    status: opFulfillmentStatus("status").notNull().default("pending"),
+    fulfilledOn: date("fulfilled_on", { mode: "string" }), // day completed
+    createdBy: text("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("daily_fulfillments_op_date_idx").on(t.opDate),
+    index("daily_fulfillments_fulfilled_on_idx").on(t.fulfilledOn),
+  ],
+);
+
+/**
+ * Free-form notes. One row per `note_key`: `general` is the always-visible
+ * note that persists independent of the selected day, `day:YYYY-MM-DD` is the
+ * optional note tied to a specific day. Upserted on `note_key`.
+ */
+export const dailyNotes = pgTable(
+  "daily_notes",
+  {
+    id: id(),
+    noteKey: text("note_key").notNull(),
+    content: text("content").notNull().default(""),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updatedBy: text("updated_by").references(() => users.id),
+  },
+  (t) => [uniqueIndex("daily_notes_note_key_unique").on(t.noteKey)],
 );
 
 export const auditLogs = pgTable(

@@ -92,6 +92,13 @@
       "when": 1790915731943,
       "tag": "0012_add_app_payment_rails",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792368840821,
+      "tag": "0013_daily_operations",
+      "breakpoints": true
     }
   ]
 }
