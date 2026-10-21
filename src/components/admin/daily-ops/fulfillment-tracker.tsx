@@ -70,6 +70,10 @@ export function FulfillmentTracker({
         </span>
       </CardHeader>
       <CardContent className="space-y-5">
+        <p className="-mt-2 text-xs text-muted-foreground">
+          Anything not fulfilled carries over to the next day on its own, so it
+          never gets lost.
+        </p>
         <form
           ref={formRef}
           action={(fd) =>

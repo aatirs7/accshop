@@ -1,7 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { saveNote } from "@/actions/admin/daily-operations";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
+import { ArrowRight } from "lucide-react";
+import { saveNote, carryOverDayNote } from "@/actions/admin/daily-operations";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { prettyDay } from "@/lib/daily-ops";
@@ -42,6 +45,7 @@ export function NotesSection({
           label={`Note for ${prettyDay(date)}`}
           hint="Tied to this specific day."
           rows={5}
+          carryFromDate={date}
         />
       </CardContent>
     </Card>
@@ -56,13 +60,17 @@ function AutosaveNote({
   label,
   hint,
   rows,
+  carryFromDate,
 }: {
   noteKey: string;
   initial: string;
   label: string;
   hint: string;
   rows: number;
+  /** When set, shows a "Carry over to next day" button for this day's note. */
+  carryFromDate?: string;
 }) {
+  const [carrying, startCarry] = useTransition();
   const [value, setValue] = useState(initial);
   const [status, setStatus] = useState<SaveStatus>("idle");
 
@@ -150,7 +158,42 @@ function AutosaveNote({
         }}
         onBlur={flush}
       />
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{hint}</p>
+        {carryFromDate && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={carrying || value.trim() === ""}
+            onClick={() =>
+              startCarry(async () => {
+                if (timer.current) {
+                  clearTimeout(timer.current);
+                  timer.current = null;
+                }
+                const current = valueRef.current;
+                const r = await carryOverDayNote(carryFromDate, current);
+                if (!r.ok) {
+                  toast.error(r.error);
+                  return;
+                }
+                // The action saved this day's text too.
+                savedRef.current = current;
+                setStatus("saved");
+                toast.success(
+                  r.count === 0
+                    ? `That note is already on ${prettyDay(r.toDate)}.`
+                    : `Note carried over to ${prettyDay(r.toDate)}.`,
+                );
+              })
+            }
+          >
+            Carry over to next day
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

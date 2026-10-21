@@ -3,18 +3,20 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, ChevronUp, ChevronDown, Pencil, Trash2, X } from "lucide-react";
+import { ArrowRight, Check, ChevronUp, ChevronDown, Pencil, Trash2, X } from "lucide-react";
 import {
   addTask,
   toggleTask,
   editTask,
   deleteTask,
   moveTask,
+  carryOverTasks,
 } from "@/actions/admin/daily-operations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { prettyDay } from "@/lib/daily-ops";
 
 type Priority = "low" | "medium" | "high";
 type Task = {
@@ -39,6 +41,26 @@ export function DailyTasks({ date, tasks }: { date: string; tasks: Task[] }) {
   const [pending, startTransition] = useTransition();
 
   const doneCount = tasks.filter((t) => t.done).length;
+  const openCount = tasks.length - doneCount;
+
+  function carryOver() {
+    startTransition(async () => {
+      const r = await carryOverTasks(date);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      const day = prettyDay(r.toDate);
+      if (r.count === 0) {
+        toast.success(`Those tasks are already on ${day}.`);
+      } else {
+        toast.success(
+          `Carried ${r.count} unfinished task${r.count === 1 ? "" : "s"} to ${day}.`,
+        );
+      }
+      router.refresh();
+    });
+  }
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
     startTransition(async () => {
@@ -54,11 +76,24 @@ export function DailyTasks({ date, tasks }: { date: string; tasks: Task[] }) {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between space-y-0">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0">
         <CardTitle>Daily Tasks</CardTitle>
-        <span className="text-sm text-muted-foreground">
-          {doneCount}/{tasks.length} done
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            {doneCount}/{tasks.length} done
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={pending || openCount === 0}
+            onClick={carryOver}
+            title="Copy this day's unfinished tasks onto the next day"
+          >
+            Carry over to next day
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <form
