@@ -12,6 +12,7 @@ import {
 import { requireAdmin } from "@/lib/auth-helpers";
 import { audit } from "@/lib/audit";
 import type { ActionResult } from "./orders";
+import { shiftDay } from "@/lib/daily-ops";
 
 const PATH = "/admin/daily-operations";
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -270,17 +271,100 @@ export async function saveNote(noteKey: string, content: string): Promise<Action
   if (!KEY_RE.test(noteKey)) return { ok: false, error: "Invalid note." };
   const clean = String(content ?? "").slice(0, 50_000);
 
-  await db
-    .insert(dailyNotes)
-    .values({ noteKey, content: clean, updatedBy: admin.id })
-    .onConflictDoUpdate({
-      target: dailyNotes.noteKey,
-      set: { content: clean, updatedAt: new Date(), updatedBy: admin.id },
-    });
+  await upsertNote(noteKey, clean, admin.id);
 
   // No revalidate: the client holds the authoritative text while typing, and a
   // refresh here would fight the textarea. The next full page load reads it.
   return { ok: true };
+}
+
+async function upsertNote(noteKey: string, content: string, userId: string) {
+  await db
+    .insert(dailyNotes)
+    .values({ noteKey, content, updatedBy: userId })
+    .onConflictDoUpdate({
+      target: dailyNotes.noteKey,
+      set: { content, updatedAt: new Date(), updatedBy: userId },
+    });
+}
+
+export type CarryResult =
+  | { ok: true; count: number; toDate: string }
+  | { ok: false; error: string };
+
+const normTask = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Copy the day's unfinished tasks onto the next day so the owner can keep
+ * working them. The originals stay on their own day, so history is kept. A task
+ * already on the next day with the same text is skipped, so pressing the button
+ * twice never duplicates anything.
+ */
+export async function carryOverTasks(fromDate: string): Promise<CarryResult> {
+  const admin = await requireAdmin();
+  if (!DAY_RE.test(fromDate)) return { ok: false, error: "Invalid date." };
+  const toDate = shiftDay(fromDate, 1);
+
+  const [open, existing] = await Promise.all([
+    db
+      .select()
+      .from(dailyTasks)
+      .where(and(eq(dailyTasks.opDate, fromDate), eq(dailyTasks.done, false)))
+      .orderBy(asc(dailyTasks.sortOrder), asc(dailyTasks.createdAt)),
+    db
+      .select({ description: dailyTasks.description, sortOrder: dailyTasks.sortOrder })
+      .from(dailyTasks)
+      .where(eq(dailyTasks.opDate, toDate)),
+  ]);
+  if (open.length === 0) {
+    return { ok: false, error: "Every task for this day is already done." };
+  }
+
+  const seen = new Set(existing.map((t) => normTask(t.description)));
+  let nextOrder = existing.reduce((m, t) => Math.max(m, t.sortOrder), -1) + 1;
+  const rows = [];
+  for (const t of open) {
+    const key = normTask(t.description);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push({
+      opDate: toDate,
+      description: t.description,
+      priority: t.priority,
+      sortOrder: nextOrder++,
+      createdBy: admin.id,
+    });
+  }
+  if (rows.length > 0) await db.insert(dailyTasks).values(rows);
+
+  revalidatePath(PATH);
+  return { ok: true, count: rows.length, toDate };
+}
+
+/**
+ * Carry the day's note onto the next day. Saves the current text first so
+ * nothing typed is lost, then adds it to the next day's note (appended below
+ * anything already written there; skipped if it is already there).
+ */
+export async function carryOverDayNote(
+  fromDate: string,
+  content: string,
+): Promise<CarryResult> {
+  const admin = await requireAdmin();
+  if (!DAY_RE.test(fromDate)) return { ok: false, error: "Invalid date." };
+  const toDate = shiftDay(fromDate, 1);
+  const clean = String(content ?? "").slice(0, 50_000);
+
+  await upsertNote(`day:${fromDate}`, clean, admin.id);
+
+  const text = clean.trim();
+  if (!text) return { ok: false, error: "This day's note is empty." };
+
+  const existing = await getNote(`day:${toDate}`);
+  if (existing.includes(text)) return { ok: true, count: 0, toDate };
+  const merged = existing.trim() ? `${existing.replace(/\s+$/, "")}\n\n${text}` : text;
+  await upsertNote(`day:${toDate}`, merged.slice(0, 50_000), admin.id);
+  return { ok: true, count: 1, toDate };
 }
 
 // ---------------------------------------------------------------------------
