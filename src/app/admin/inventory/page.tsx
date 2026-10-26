@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { asc, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, stockAccounts } from "@/lib/db/schema";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminInventoryPage() {
+  await requireAdminPage();
   const [productList, stockRows] = await Promise.all([
     db.query.products.findMany({ orderBy: asc(products.sort) }),
     db.query.stockAccounts.findMany({
