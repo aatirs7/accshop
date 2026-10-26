@@ -1,3 +1,6 @@
+import { AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS } from "@/lib/affiliates/constants";
+import { formatMoney } from "@/lib/format";
+
 export interface FaqEntry {
   /** Short label shown as a tappable quick-question chip. */
   question: string;
@@ -63,8 +66,8 @@ export const FAQS: FaqEntry[] = [
   {
     question: "Can I earn by referring people?",
     answer:
-      "Yes! Sign up as an affiliate for free, get a unique referral code, and earn 10% (that's $55) on every account sold through your link. Track your referrals and commission in your dashboard.",
-    keywords: ["affiliate", "refer", "referral", "commission", "earn", "10%", "code", "money", "payout"],
+      `Yes! Join the affiliate program free, pick your own code, and earn ${formatMoney(AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS)} for every account sold with it. ACCSHOP pays you out directly, and you track every sale in your affiliate dashboard.`,
+    keywords: ["affiliate", "refer", "referral", "commission", "earn", "code", "money", "payout"],
     link: { href: "/affiliates", label: "Become an affiliate" },
   },
   {
