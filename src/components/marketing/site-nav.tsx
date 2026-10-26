@@ -47,7 +47,7 @@ export async function SiteNav() {
             </>
           ) : (
             <Button asChild variant="ghost" size="sm">
-              <Link href="/portal/login">Affiliate login</Link>
+              <Link href="/affiliates/login">Affiliate login</Link>
             </Button>
           )}
           <Button asChild size="sm">

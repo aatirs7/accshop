@@ -1,0 +1,1 @@
+ALTER TABLE "affiliate_commissions" ALTER COLUMN "status" SET DEFAULT 'pending';

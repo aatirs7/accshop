@@ -20,6 +20,7 @@ import {
 } from "@/lib/email/templates";
 import { audit } from "@/lib/audit";
 import { sendPushToAdmins } from "@/lib/push/send";
+import { AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS } from "@/lib/affiliates/constants";
 
 /**
  * The single paid-transition for EVERY rail: the Stripe webhook and the
@@ -98,20 +99,21 @@ export async function markOrderPaid(
       }
     }
 
-    // Affiliate commission (self-serve referral): accrue at the affiliate's rate.
+    // Affiliate commission: a flat amount per account sold, starting as
+    // pending until the owner approves it. Only active affiliates earn. One
+    // commission per order (unique order_id), so a repeat call is a no-op.
     if (order.affiliateId) {
       const affiliate = await tx.query.affiliates.findFirst({
         where: eq(affiliates.id, order.affiliateId),
       });
-      if (affiliate) {
+      if (affiliate && affiliate.status === "active") {
         await tx
           .insert(affiliateCommissions)
           .values({
             affiliateId: affiliate.id,
             orderId,
-            amountCents: Math.round(
-              (order.totalCents * affiliate.commissionRateBps) / 10_000,
-            ),
+            amountCents: AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS * order.quantity,
+            status: "pending",
           })
           .onConflictDoNothing();
       }
