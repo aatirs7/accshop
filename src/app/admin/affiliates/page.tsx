@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { affiliateCommissions, affiliates, orders } from "@/lib/db/schema";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminAffiliatesPage() {
+  await requireAdminPage();
   const rows = await db.query.affiliates.findMany({
     with: { user: true },
     orderBy: desc(affiliates.createdAt),

@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
@@ -37,6 +38,7 @@ export default async function AdminOrderDetailPage({
 }: {
   params: Promise<{ orderCode: string }>;
 }) {
+  await requireAdminPage();
   const { orderCode } = await params;
   const order = await db.query.orders.findFirst({
     where: eq(orders.orderCode, orderCode.toUpperCase()),

@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bulkInquiries } from "@/lib/db/schema";
@@ -6,6 +7,7 @@ import { InquiryStatusSelect } from "@/components/admin/queue-actions";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function AdminInquiriesPage() {
+  await requireAdminPage();
   const inquiries = await db.query.bulkInquiries.findMany({
     orderBy: desc(bulkInquiries.createdAt),
   });

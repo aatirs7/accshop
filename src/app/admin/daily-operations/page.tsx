@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { isDayKey } from "@/lib/daily-ops";
 import {
   getDayTasks,
@@ -19,6 +20,7 @@ export default async function DailyOperationsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireAdminPage();
   const params = await searchParams;
   const raw = Array.isArray(params.date) ? params.date[0] : params.date;
   const date = isDayKey(raw) ? raw : null;

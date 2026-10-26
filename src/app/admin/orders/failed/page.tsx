@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { and, desc, eq, or } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminFailedOrdersPage() {
+  await requireAdminPage();
   // Checkout rows are created the moment someone starts paying, before the
   // payment is confirmed, so this is whoever never finished paying.
   const failedOrders = await db.query.orders.findMany({
