@@ -1,4 +1,5 @@
 import { desc, eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
@@ -150,6 +151,10 @@ async function commissionsCsv(): Promise<string> {
 }
 
 export async function GET(request: Request) {
+  // notFound() is not documented for route handlers, so answer non-admins
+  // with a plain 404 first; requireAdmin() stays as the authoritative check.
+  const session = await auth();
+  if (session?.user?.role !== "admin") return new Response("Not found", { status: 404 });
   const admin = await requireAdmin();
   const type = new URL(request.url).searchParams.get("type");
   if (type !== "affiliates" && type !== "commissions") {
