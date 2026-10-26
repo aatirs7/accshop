@@ -49,11 +49,9 @@ function SessionRow({ s, maxDate }: { s: LiveSessionItem; maxDate: string }) {
   function remove() {
     startTransition(async () => {
       const result = await deleteLiveSession(s.id);
+      setConfirming(false);
       if (result.ok) toast.success("Report deleted");
-      else {
-        toast.error(result.error);
-        setConfirming(false);
-      }
+      else toast.error(result.error);
     });
   }
 
