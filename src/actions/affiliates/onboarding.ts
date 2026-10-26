@@ -171,6 +171,16 @@ export async function joinAffiliate(_prev: OnboardingState, formData: FormData):
       db.query.affiliates.findFirst({ where: eq(affiliates.userId, userId) }),
     ]);
     if (partner) return { error: COACH_REFUSAL };
+    // An existing affiliate profile (e.g. one an admin created, with no
+    // password yet) can only be completed by someone who proved they own the
+    // email. Otherwise anyone who knew the email could redirect its payouts.
+    if (aff && !session?.user) {
+      return {
+        error:
+          "That email already has an affiliate profile. Use the sign-in link on the login page, then finish setup.",
+        field: "email",
+      };
+    }
     existingAffiliate = aff;
   }
 
