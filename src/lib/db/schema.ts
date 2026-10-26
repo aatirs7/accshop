@@ -73,9 +73,20 @@ export const partnerStatus = pgEnum("partner_status", [
   "approved",
   "suspended",
 ]);
+// "accrued" is the legacy name for a not-yet-approved commission (treat as
+// pending). Affiliate commissions now move pending -> approved -> paid, or to
+// reversed on a refund/chargeback.
 export const commissionStatus = pgEnum("commission_status", [
   "accrued",
   "paid",
+  "pending",
+  "approved",
+  "reversed",
+]);
+export const affiliateStatus = pgEnum("affiliate_status", [
+  "active",
+  "suspended",
+  "deactivated",
 ]);
 export const applicationStatus = pgEnum("application_status", [
   "new",
@@ -305,7 +316,18 @@ export const affiliates = pgTable("affiliates", {
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
   code: text("code").notNull().unique(),
+  // Legacy percentage rate. Affiliate commission is now a flat amount per
+  // account sold (AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS); kept for history.
   commissionRateBps: integer("commission_rate_bps").notNull().default(1000),
+  // Public handle the affiliate picks at signup (lowercase, unique). Null for
+  // affiliates who joined before /affiliates existed until they complete it.
+  username: text("username").unique(),
+  // Where the owner sends payouts, e.g. method "paypal" + handle "@name".
+  payoutMethod: text("payout_method"),
+  payoutHandle: text("payout_handle"),
+  status: affiliateStatus("status").notNull().default("active"),
+  weeklyLiveHoursGoal: integer("weekly_live_hours_goal").notNull().default(10),
+  weeklyLiveSessionsGoal: integer("weekly_live_sessions_goal").notNull().default(5),
   createdAt: createdAt(),
 });
 
@@ -321,11 +343,40 @@ export const affiliateCommissions = pgTable(
       .unique()
       .references(() => orders.id),
     amountCents: integer("amount_cents").notNull(),
-    status: commissionStatus("status").notNull().default("accrued"),
+    status: commissionStatus("status").notNull().default("pending"),
+    approvedAt: timestamp("approved_at", { withTimezone: true, mode: "date" }),
     paidAt: timestamp("paid_at", { withTimezone: true, mode: "date" }),
+    reversedAt: timestamp("reversed_at", { withTimezone: true, mode: "date" }),
+    reversalReason: text("reversal_reason"),
     createdAt: createdAt(),
   },
   (t) => [index("aff_comm_affiliate_idx").on(t.affiliateId, t.status)],
+);
+
+/**
+ * A LIVE stream an affiliate reports. Times are the affiliate's local wall
+ * clock ("HH:MM"); `durationMinutes` is computed server-side (an end time
+ * earlier than the start means the stream crossed midnight).
+ */
+export const affiliateLiveSessions = pgTable(
+  "affiliate_live_sessions",
+  {
+    id: id(),
+    affiliateId: text("affiliate_id")
+      .notNull()
+      .references(() => affiliates.id, { onDelete: "cascade" }),
+    sessionDate: date("session_date", { mode: "string" }).notNull(),
+    startTime: text("start_time").notNull(),
+    endTime: text("end_time").notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    incomingDms: integer("incoming_dms").notNull().default(0),
+    qualifiedLeads: integer("qualified_leads").notNull().default(0),
+    commonQuestions: text("common_questions"),
+    technicalIssues: text("technical_issues"),
+    notes: text("notes"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("aff_live_affiliate_date_idx").on(t.affiliateId, t.sessionDate)],
 );
 
 export const partnerPricingRules = pgTable(
@@ -784,7 +835,18 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 export const affiliatesRelations = relations(affiliates, ({ one, many }) => ({
   user: one(users, { fields: [affiliates.userId], references: [users.id] }),
   commissions: many(affiliateCommissions),
+  liveSessions: many(affiliateLiveSessions),
 }));
+
+export const affiliateLiveSessionsRelations = relations(
+  affiliateLiveSessions,
+  ({ one }) => ({
+    affiliate: one(affiliates, {
+      fields: [affiliateLiveSessions.affiliateId],
+      references: [affiliates.id],
+    }),
+  }),
+);
 
 export const affiliateCommissionsRelations = relations(
   affiliateCommissions,

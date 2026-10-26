@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { affiliates, partners } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { referralDashboard } from "@/lib/db/queries/referrals";
 import { env } from "@/lib/env";
@@ -25,6 +29,12 @@ function statusLabel(row: { paymentStatus: string; fulfillmentStatus: string }) 
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  // Self-serve affiliates have their own dashboard now; coaches stay here.
+  const [aff, partner] = await Promise.all([
+    db.query.affiliates.findFirst({ where: eq(affiliates.userId, user.id), columns: { id: true } }),
+    db.query.partners.findFirst({ where: eq(partners.userId, user.id), columns: { id: true } }),
+  ]);
+  if (aff && !partner) redirect("/affiliates/dashboard");
   const data = await referralDashboard(user.id);
 
   if (!data.isReferrer) {
@@ -33,10 +43,10 @@ export default async function DashboardPage() {
         <h1 className="font-display text-3xl font-medium">Referral dashboard</h1>
         <p className="mt-3 text-muted-foreground">
           This account isn&apos;t set up as an affiliate or coach yet. Join the
-          affiliate program to get a referral code and earn 10% on every sale.
+          affiliate program to get your own code and earn $100 on every account sold.
         </p>
         <Button asChild className="mt-6">
-          <Link href="/portal/signup">Become an affiliate</Link>
+          <Link href="/affiliates/join">Become an affiliate</Link>
         </Button>
       </div>
     );

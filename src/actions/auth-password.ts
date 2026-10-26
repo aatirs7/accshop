@@ -40,7 +40,13 @@ export async function passwordLogin(
     entityType: "user",
     entityId: user.id,
   });
-  redirect(user.role === "admin" ? "/admin" : "/dashboard");
+  if (user.role === "admin") redirect("/admin");
+  // Self-serve affiliates (not coaches) live under /affiliates now.
+  const [aff, partner] = await Promise.all([
+    db.query.affiliates.findFirst({ where: eq(affiliates.userId, user.id), columns: { id: true } }),
+    db.query.partners.findFirst({ where: eq(partners.userId, user.id), columns: { id: true } }),
+  ]);
+  redirect(aff && !partner ? "/affiliates/dashboard" : "/dashboard");
 }
 
 const signupSchema = z.object({

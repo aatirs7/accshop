@@ -112,7 +112,8 @@ export async function startCheckout(
     const affiliate = await db.query.affiliates.findFirst({
       where: eq(affiliates.code, codeInput),
     });
-    if (affiliate && affiliate.userId !== userId) {
+    // Suspended or deactivated affiliates' codes no longer attribute sales.
+    if (affiliate && affiliate.status === "active" && affiliate.userId !== userId) {
       affiliateId = affiliate.id;
       attributedCode = affiliate.code;
       source = "referral";

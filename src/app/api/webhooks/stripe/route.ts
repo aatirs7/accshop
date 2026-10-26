@@ -6,6 +6,7 @@ import { orders, webhookEvents } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { getStripe } from "@/lib/payments/stripe";
 import { markOrderPaid } from "@/lib/payments/mark-paid";
+import { reverseAffiliateCommissionForOrder } from "@/lib/affiliates/commissions";
 
 export const runtime = "nodejs";
 
@@ -84,10 +85,15 @@ export async function POST(request: Request) {
           ? charge.payment_intent
           : charge.payment_intent?.id;
       if (intentId) {
-        await db
+        const refunded = await db
           .update(orders)
           .set({ paymentStatus: "refunded" })
-          .where(eq(orders.stripePaymentIntentId, intentId));
+          .where(eq(orders.stripePaymentIntentId, intentId))
+          .returning({ id: orders.id });
+        // A refunded order earns no affiliate commission.
+        for (const o of refunded) {
+          await reverseAffiliateCommissionForOrder(o.id, "Order refunded");
+        }
       }
       break;
     }
