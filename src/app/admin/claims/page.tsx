@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -17,6 +18,7 @@ const statusTone: Record<string, string> = {
 };
 
 export default async function AdminClaimsPage() {
+  await requireAdminPage();
   const claims = await db.query.warrantyClaims.findMany({
     with: {
       order: { with: { product: true } },

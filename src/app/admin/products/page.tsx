@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { productImages, productVariants, products } from "@/lib/db/schema";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductEditor } from "@/components/admin/product-editor";
 
 export default async function AdminProductsPage() {
+  await requireAdminPage();
   const catalog = await db.query.products.findMany({
     orderBy: asc(products.sort),
   });

@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { topCustomers } from "@/lib/db/queries/reporting";
 import { formatMoney } from "@/lib/format";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminCustomersPage() {
+  await requireAdminPage();
   const customers = await topCustomers(200);
 
   return (

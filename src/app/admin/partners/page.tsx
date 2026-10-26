@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { partnerVolumes } from "@/lib/db/queries/reporting";
 import { formatMoney } from "@/lib/format";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminPartnersPage() {
+  await requireAdminPage();
   const partners = await partnerVolumes();
 
   return (

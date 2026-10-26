@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { and, count, desc, eq, inArray, notInArray, or } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminOrdersPage() {
+  await requireAdminPage();
   const demoIds = await demoUserIds();
   const notDemo = demoIds.length ? notInArray(orders.userId, demoIds) : undefined;
 

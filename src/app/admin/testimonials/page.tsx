@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { testimonialSubmissions, testimonials } from "@/lib/db/schema";
@@ -10,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 
 export default async function AdminTestimonialsPage() {
+  await requireAdminPage();
   const [rows, submissions] = await Promise.all([
     db.query.testimonials.findMany({ orderBy: asc(testimonials.sort) }),
     db.query.testimonialSubmissions.findMany({

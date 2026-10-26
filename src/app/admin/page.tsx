@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import {
   bulkSalesSummary,
   commissionSummary,
@@ -104,6 +105,9 @@ export default async function AdminOverviewPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // The layout shows the sign-in form to non-admins; never load data for them.
+  if ((await auth())?.user?.role !== "admin") return null;
+
   const range = parseMetricsRange(await searchParams);
   const label = rangeLabel(range);
 

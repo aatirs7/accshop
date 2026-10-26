@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { asc, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { deliverables, suppliers } from "@/lib/db/schema";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminSuppliersPage() {
+  await requireAdminPage();
   const [supplierRows, stats] = await Promise.all([
     db.query.suppliers.findMany({ orderBy: asc(suppliers.name) }),
     db

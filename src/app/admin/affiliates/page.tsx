@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
 import { asc, eq, inArray } from "drizzle-orm";
 import { Download } from "lucide-react";
@@ -126,6 +127,7 @@ function QueueItem({ r }: { r: QueueRow }) {
 }
 
 export default async function AdminAffiliatesPage() {
+  await requireAdminPage();
   const todayKey = new Date().toISOString().slice(0, 10);
   const [overview, queue] = await Promise.all([
     getAffiliatesOverview(todayKey),

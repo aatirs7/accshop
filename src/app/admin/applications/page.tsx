@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/auth-helpers";
 import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { partnerApplications } from "@/lib/db/schema";
@@ -14,6 +15,7 @@ const statusTone: Record<string, string> = {
 };
 
 export default async function AdminApplicationsPage() {
+  await requireAdminPage();
   const applications = await db.query.partnerApplications.findMany({
     orderBy: desc(partnerApplications.createdAt),
   });
