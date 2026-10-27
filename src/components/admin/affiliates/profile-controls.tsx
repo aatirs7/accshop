@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   changeAffiliateCode,
   checkAffiliateCode,
+  deleteAffiliates,
   setAffiliateGoals,
   setAffiliateStatus,
 } from "@/actions/admin/affiliates";
@@ -209,5 +212,71 @@ export function CodeForm({
         {pending ? "Saving..." : "Change code"}
       </Button>
     </form>
+  );
+}
+
+/**
+ * Permanently remove a fake or filler profile. Refused server-side when the
+ * affiliate has commissions; those should be deactivated instead.
+ */
+export function DeleteAffiliate({
+  affiliateId,
+  hasCommissions,
+}: {
+  affiliateId: string;
+  hasCommissions: boolean;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [asking, setAsking] = useState(false);
+  const router = useRouter();
+
+  if (hasCommissions) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        This affiliate has commissions, so the profile can&apos;t be deleted. Deactivate them instead.
+      </p>
+    );
+  }
+
+  const remove = () =>
+    startTransition(async () => {
+      const result = await deleteAffiliates([affiliateId]);
+      if (result.ok) {
+        toast.success("Affiliate deleted");
+        router.push("/admin/affiliates");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Removes this affiliate profile, their code and their LIVE reports for good. Use it for fake
+        or filler signups.
+      </p>
+      {asking ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
+          <span className="text-xs">Delete this affiliate for good?</span>
+          <Button type="button" size="sm" variant="destructive" disabled={pending} onClick={remove}>
+            {pending ? "Deleting..." : "Delete"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => setAsking(false)}
+          >
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" size="sm" variant="destructive" onClick={() => setAsking(true)}>
+          Delete affiliate
+        </Button>
+      )}
+    </div>
   );
 }

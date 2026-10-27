@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { ArrowDown, ChevronRight } from "lucide-react";
+import { deleteAffiliates } from "@/actions/admin/affiliates";
+import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { formatDuration } from "@/lib/affiliates/live";
 import {
@@ -86,9 +90,49 @@ function SortHead({
   );
 }
 
+/** Only profiles with no commission money can be deleted (the server checks too). */
+function deletable(r: AffiliateListRow): boolean {
+  return r.pendingCents + r.approvedCents + r.paidCents === 0;
+}
+
+function SelectBox({
+  row,
+  checked,
+  toggle,
+}: {
+  row: AffiliateListRow;
+  checked: boolean;
+  toggle: (id: string) => void;
+}) {
+  const ok = deletable(row);
+  return (
+    <input
+      type="checkbox"
+      className="size-4 accent-brand-gold disabled:opacity-30"
+      checked={checked}
+      disabled={!ok}
+      title={ok ? `Select ${row.name}` : "Has commissions, can't be deleted"}
+      aria-label={`Select ${row.name}`}
+      onChange={() => toggle(row.id)}
+    />
+  );
+}
+
 export function AffiliatesList({ rows }: { rows: AffiliateListRow[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<SortKey>("lifetimeCents");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [asking, setAsking] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const counts = useMemo(() => {
     const c: Record<Filter, number> = { all: rows.length, active: 0, suspended: 0, deactivated: 0 };
@@ -104,8 +148,79 @@ export function AffiliatesList({ rows }: { rows: AffiliateListRow[] }) {
     [rows, filter, sort],
   );
 
+  const shownDeletable = shown.filter(deletable);
+  const allShownSelected =
+    shownDeletable.length > 0 && shownDeletable.every((r) => selected.has(r.id));
+  const toggleAllShown = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const r of shownDeletable) {
+        if (allShownSelected) next.delete(r.id);
+        else next.add(r.id);
+      }
+      return next;
+    });
+  const selectedRows = rows.filter((r) => selected.has(r.id));
+
+  const removeSelected = () =>
+    startTransition(async () => {
+      const result = await deleteAffiliates(selectedRows.map((r) => r.id));
+      if (result.ok) {
+        const n = result.deleted ?? 0;
+        toast.success(
+          `Deleted ${n} affiliate${n === 1 ? "" : "s"}` +
+            (result.skipped ? `. ${result.skipped} with commissions were kept.` : ""),
+        );
+        setSelected(new Set());
+        setAsking(false);
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+
   return (
     <div className="space-y-4">
+      {selectedRows.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+          <span className="text-sm">{selectedRows.length} selected</span>
+          {asking ? (
+            <>
+              <span className="text-xs">
+                Delete {selectedRows.length} affiliate{selectedRows.length === 1 ? "" : "s"} for
+                good?
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                disabled={pending}
+                onClick={removeSelected}
+              >
+                {pending ? "Deleting..." : "Delete"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={pending}
+                onClick={() => setAsking(false)}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button type="button" size="sm" variant="destructive" onClick={() => setAsking(true)}>
+                Delete selected
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                Clear
+              </Button>
+            </>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Status
@@ -135,6 +250,17 @@ export function AffiliatesList({ rows }: { rows: AffiliateListRow[] }) {
             ))}
           </select>
         </label>
+        {shownDeletable.length > 0 && (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground lg:hidden">
+            <input
+              type="checkbox"
+              className="size-4 accent-brand-gold"
+              checked={allShownSelected}
+              onChange={toggleAllShown}
+            />
+            Select all without sales
+          </label>
+        )}
       </div>
 
       {shown.length === 0 ? (
@@ -148,6 +274,17 @@ export function AffiliatesList({ rows }: { rows: AffiliateListRow[] }) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-brand-gold disabled:opacity-30"
+                      checked={allShownSelected}
+                      disabled={shownDeletable.length === 0}
+                      title="Select all without sales"
+                      aria-label="Select all without sales"
+                      onChange={toggleAllShown}
+                    />
+                  </TableHead>
                   <TableHead>Affiliate</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Status</TableHead>
@@ -163,6 +300,9 @@ export function AffiliatesList({ rows }: { rows: AffiliateListRow[] }) {
               <TableBody>
                 {shown.map((r) => (
                   <TableRow key={r.id}>
+                    <TableCell>
+                      <SelectBox row={r} checked={selected.has(r.id)} toggle={toggle} />
+                    </TableCell>
                     <TableCell>
                       <Link
                         href={`/admin/affiliates/${r.id}`}
@@ -207,11 +347,14 @@ export function AffiliatesList({ rows }: { rows: AffiliateListRow[] }) {
           {/* Mobile and tablet cards */}
           <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
             {shown.map((r) => (
-              <Link
-                key={r.id}
-                href={`/admin/affiliates/${r.id}`}
-                className="block rounded-lg border border-border/60 p-4 transition-colors hover:border-brand-gold/40"
-              >
+              <div key={r.id} className="relative">
+                <div className="absolute left-4 top-4 z-10">
+                  <SelectBox row={r} checked={selected.has(r.id)} toggle={toggle} />
+                </div>
+                <Link
+                  href={`/admin/affiliates/${r.id}`}
+                  className="block rounded-lg border border-border/60 p-4 pl-11 transition-colors hover:border-brand-gold/40"
+                >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-medium">
@@ -248,7 +391,8 @@ export function AffiliatesList({ rows }: { rows: AffiliateListRow[] }) {
                   <dt className="text-muted-foreground">Last LIVE</dt>
                   <dd className="text-right">{r.lastLiveLabel ?? "Never"}</dd>
                 </dl>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </>

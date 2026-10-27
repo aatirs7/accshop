@@ -17,6 +17,7 @@ import { CommissionActions } from "@/components/admin/affiliates/commission-acti
 import { ConfirmAction } from "@/components/admin/affiliates/confirm-action";
 import {
   CodeForm,
+  DeleteAffiliate,
   GoalsForm,
   StatusControls,
 } from "@/components/admin/affiliates/profile-controls";
@@ -270,6 +271,18 @@ export default async function AdminAffiliateDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Delete profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DeleteAffiliate
+            affiliateId={affiliate.id}
+            hasCommissions={commissions.some((c) => c.status !== "reversed")}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
