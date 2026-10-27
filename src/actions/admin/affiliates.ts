@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { affiliateCommissions, affiliates, partners, users } from "@/lib/db/schema";
+import { affiliateCommissions, affiliates, orders, partners, users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import { audit } from "@/lib/audit";
 import {
@@ -227,6 +227,75 @@ export async function changeAffiliateCode(formData: FormData): Promise<ActionRes
   });
   revalidateAffiliates(row.id);
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Delete
+// ---------------------------------------------------------------------------
+
+const deleteSchema = z.array(idSchema).min(1).max(500);
+
+/**
+ * Delete affiliate profiles, for clearing out fake or filler signups. Anyone
+ * with a live commission (pending, approved or paid) is skipped so money
+ * history is never lost; deactivate those instead. Their LIVE reports and any
+ * reversed commissions go with the profile, orders keep the code they were
+ * placed with but lose the link. The user account itself is left alone.
+ */
+export async function deleteAffiliates(
+  affiliateIds: string[],
+): Promise<ActionResult & { deleted?: number; skipped?: number }> {
+  const admin = await requireAdmin();
+  const parsed = deleteSchema.safeParse(affiliateIds);
+  if (!parsed.success) return { ok: false, error: "Pick at least one affiliate." };
+  const ids = [...new Set(parsed.data)];
+
+  const rows = await db
+    .select({ id: affiliates.id, code: affiliates.code, username: affiliates.username, email: users.email })
+    .from(affiliates)
+    .innerJoin(users, eq(users.id, affiliates.userId))
+    .where(inArray(affiliates.id, ids));
+  if (rows.length === 0) return { ok: false, error: "Those affiliates no longer exist." };
+
+  const withMoney = new Set(
+    (
+      await db
+        .selectDistinct({ id: affiliateCommissions.affiliateId })
+        .from(affiliateCommissions)
+        .where(
+          and(
+            inArray(affiliateCommissions.affiliateId, rows.map((r) => r.id)),
+            ne(affiliateCommissions.status, "reversed"),
+          ),
+        )
+    ).map((r) => r.id),
+  );
+  const doomed = rows.filter((r) => !withMoney.has(r.id));
+  if (doomed.length === 0) {
+    return {
+      ok: false,
+      error:
+        rows.length === 1
+          ? "This affiliate has commissions, so they can't be deleted. Deactivate them instead."
+          : "All of these have commissions, so they can't be deleted. Deactivate them instead.",
+    };
+  }
+
+  const doomedIds = doomed.map((r) => r.id);
+  await db.update(orders).set({ affiliateId: null }).where(inArray(orders.affiliateId, doomedIds));
+  await db.delete(affiliates).where(inArray(affiliates.id, doomedIds));
+
+  for (const r of doomed) {
+    await audit({
+      actorUserId: admin.id,
+      action: "affiliate.deleted",
+      entityType: "affiliate",
+      entityId: r.id,
+      metadata: { code: r.code, username: r.username, email: r.email },
+    });
+  }
+  revalidateAffiliates();
+  return { ok: true, deleted: doomed.length, skipped: rows.length - doomed.length };
 }
 
 // ---------------------------------------------------------------------------
