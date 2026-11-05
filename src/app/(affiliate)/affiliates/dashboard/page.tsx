@@ -5,7 +5,7 @@ import { getAffiliateDashboard } from "@/lib/affiliates/stats";
 import { AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS } from "@/lib/affiliates/constants";
 import { formatDuration } from "@/lib/affiliates/live";
 import { formatMoney } from "@/lib/format";
-import { env } from "@/lib/env";
+import { affiliateLink } from "@/lib/affiliate-ref";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CopyField } from "@/components/dashboard/copy-field";
@@ -40,7 +40,7 @@ export default async function AffiliateDashboardPage() {
   const today = await getViewerToday();
   const { totals, commissions, series, week } = await getAffiliateDashboard(affiliate.id, today, 8);
   const earning = canEarn(affiliate);
-  const shareLink = `${env.APP_URL}/accounts?code=${affiliate.code}`;
+  const shareLink = affiliateLink(affiliate.code);
   const milestone = milestoneFor(totals.salesCount);
   const salesToGo = milestone.next - totals.salesCount;
 
@@ -150,7 +150,7 @@ export default async function AffiliateDashboardPage() {
               <h2 className="font-display text-lg font-medium">Your link</h2>
               <p className="text-xs text-muted-foreground">
                 {earning
-                  ? `Anyone who buys through it earns you ${formatMoney(AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS)} per account.`
+                  ? `This is your permanent link. Anyone who buys after opening it is credited to you, even if they never type your code. Every account they buy earns you ${formatMoney(AFFILIATE_COMMISSION_PER_ACCOUNT_CENTS)}.`
                   : "Your link still works for buyers, but it isn't earning right now."}
               </p>
             </div>

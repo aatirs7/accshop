@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { AFF_COOKIE, cleanAffCode } from "@/lib/affiliate-ref";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -107,7 +109,11 @@ export async function startCheckout(
 
   // Referral: a code entered at checkout matches an affiliate first, then a
   // partner/coach code. ?ref=partnerId link still works for partners.
-  const codeInput = (referralCode ?? "").trim().toUpperCase();
+  // A typed code wins; otherwise fall back to the affiliate link the buyer
+  // arrived through, so a forgotten code no longer costs the affiliate.
+  const typedCode = (referralCode ?? "").trim().toUpperCase();
+  const linkCode = typedCode ? null : cleanAffCode((await cookies()).get(AFF_COOKIE)?.value);
+  const codeInput = typedCode || linkCode || "";
   if (codeInput) {
     const affiliate = await db.query.affiliates.findFirst({
       where: eq(affiliates.code, codeInput),
