@@ -67,6 +67,7 @@ Scripts: `npm test` (unit), `npm run typecheck`, `npm run db:generate|migrate|pu
 - **Payment layer is an interface** (`src/lib/payments/provider.ts`) so a replacement processor is a one-file swap; all order/margin/commission state lives in our DB, so a Stripe freeze never freezes the business.
 - **Warranty (30-day) is derived** from `deliveredAt`, never stored (`src/lib/orders/status.ts`).
 - **Auth:** Auth.js v5 magic-link, DB sessions. `requireAdmin()` 404s non-admins (doesn't advertise the panel). `ADMIN_EMAILS` auto-promotes to admin on sign-in. Cheap redirect in `src/proxy.ts` (Next 16 renamed middleware → proxy); authoritative checks are server-side in every page/action.
+- **Affiliate links** (`src/lib/affiliate-ref.ts`): each affiliate's permanent link is `/r/CODE`. It sets the `acc_aff` cookie for 400 days (the browser maximum), and `src/proxy.ts` also tags any page opened with `?code=` by redirecting to the same URL without it, because `/accounts` redirects on its own and would drop a cookie set on `next()`. Checkout pre-fills the code from the cookie, and `startCheckout` falls back to it when no code is typed (typed code wins). Same-device only: a buyer who opens the link on a phone and buys on a laptop is not tagged.
 - Brand tokens (dark + champagne gold) live in `src/app/globals.css` — swap there to rebrand.
 
 ## Key files
