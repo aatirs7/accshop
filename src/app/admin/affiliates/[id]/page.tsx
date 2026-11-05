@@ -8,6 +8,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { getAffiliateDashboard, getAffiliateLiveSessions } from "@/lib/affiliates/stats";
 import { formatDuration } from "@/lib/affiliates/live";
 import { payoutMethodLabel } from "@/lib/affiliates/constants";
+import { affiliateLink } from "@/lib/affiliate-ref";
 import {
   approveAllPendingCommissions,
   markAffiliateCommissionsPaid,
@@ -140,6 +141,9 @@ export default async function AdminAffiliateDetailPage({
               <Field label="Username">{affiliate.username ? `@${affiliate.username}` : "Not set"}</Field>
               <Field label="Code">
                 <span className="font-mono text-brand-gold">{affiliate.code}</span>
+              </Field>
+              <Field label="Link">
+                <span className="font-mono text-xs break-all">{affiliateLink(affiliate.code)}</span>
               </Field>
               <Field label="Joined">{formatDate(affiliate.createdAt)}</Field>
               <Field label="Payout method">{payoutMethodLabel(affiliate.payoutMethod)}</Field>

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { AFF_COOKIE, cleanAffCode } from "@/lib/affiliate-ref";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -37,6 +39,7 @@ export default async function CheckoutPage({
     orderBy: asc(productVariants.sort),
   });
 
+  const linkCode = cleanAffCode((await cookies()).get(AFF_COOKIE)?.value);
   const session = await auth();
   let partnerTiers: PriceTier[] = [];
   if (session?.user) {
@@ -108,7 +111,7 @@ export default async function CheckoutPage({
               variants[0]?.id ??
               null
             }
-            initialReferralCode={(code ?? ref ?? "").toUpperCase() || null}
+            initialReferralCode={cleanAffCode(code) ?? linkCode ?? ((ref ?? "").toUpperCase() || null)}
             methods={activeAppRails().map((r) => ({
               id: r.id,
               label: r.label,
