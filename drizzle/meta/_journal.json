@@ -113,6 +113,13 @@
       "when": 1793056693124,
       "tag": "0015_affiliate_commission_default",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794426506057,
+      "tag": "0016_promo_code_settings",
+      "breakpoints": true
     }
   ]
 }

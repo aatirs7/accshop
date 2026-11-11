@@ -300,3 +300,30 @@ export async function resendPaymentInstructions(
   });
   return { ok: true };
 }
+
+/**
+ * Take an unpaid order off the Awaiting payment list (a test, or a buyer who
+ * never paid). Soft: the order is marked cancelled, so it moves to the Failed
+ * / incomplete checkouts page with its history intact instead of vanishing.
+ * Only pending orders qualify, so nothing paid can be removed by mistake.
+ */
+export async function removeUnpaidOrder(orderId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const [updated] = await db
+    .update(orders)
+    .set({ paymentStatus: "cancelled" })
+    .where(and(eq(orders.id, orderId), eq(orders.paymentStatus, "pending")))
+    .returning({ orderCode: orders.orderCode, totalCents: orders.totalCents });
+  if (!updated) return { ok: false, error: "This order isn't awaiting payment any more." };
+  await audit({
+    actorUserId: admin.id,
+    action: "order.removed_unpaid",
+    entityType: "order",
+    entityId: orderId,
+    metadata: { orderCode: updated.orderCode, totalCents: updated.totalCents },
+  });
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/orders/failed");
+  revalidatePath("/admin");
+  return { ok: true };
+}

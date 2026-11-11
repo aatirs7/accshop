@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { startCheckout, type CheckoutResult } from "@/actions/checkout";
 import { formatMoney } from "@/lib/format";
-import { PROMO_CODES } from "@/lib/promo-codes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +35,8 @@ export function CheckoutForm(props: {
   initialVariantId: string | null;
   initialReferralCode: string | null;
   methods: CheckoutMethod[];
+  /** Promo codes that are switched on, for the price preview only. */
+  promoCodes: Record<string, number>;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [variantId, setVariantId] = useState(props.initialVariantId ?? "");
@@ -61,7 +62,7 @@ export function CheckoutForm(props: {
 
   // Preview only, mirrors the server-side check in startCheckout.
   const appliedCode = promoCode.trim().toUpperCase();
-  const promoValue = PROMO_CODES[appliedCode];
+  const promoValue = props.promoCodes[appliedCode];
   const promoApplied = Boolean(promoValue);
   const discount = promoApplied ? Math.min(promoValue, subtotal - 100) : 0;
   const total = subtotal - discount;
