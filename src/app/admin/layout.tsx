@@ -38,6 +38,7 @@ const nav = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/daily-operations", label: "Daily Operations" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/promo-codes", label: "Promo codes" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/partners", label: "Partners" },

@@ -13,6 +13,7 @@ import {
 import { auth } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
 import { activeAppRails } from "@/lib/payments/app-rails";
+import { activePromoCodes } from "@/lib/promo-status";
 import { CheckoutForm, type PriceTier } from "@/components/checkout/checkout-form";
 import { Badge } from "@/components/ui/badge";
 
@@ -112,6 +113,7 @@ export default async function CheckoutPage({
               null
             }
             initialReferralCode={cleanAffCode(code) ?? linkCode ?? ((ref ?? "").toUpperCase() || null)}
+            promoCodes={await activePromoCodes()}
             methods={activeAppRails().map((r) => ({
               id: r.id,
               label: r.label,

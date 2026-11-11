@@ -22,7 +22,7 @@ import { appRail } from "@/lib/payments/app-rails";
 import { audit } from "@/lib/audit";
 import { formatMoney } from "@/lib/format";
 import { sendPushToAdmins } from "@/lib/push/send";
-import { PROMO_CODES } from "@/lib/promo-codes";
+import { activePromoCodes } from "@/lib/promo-status";
 
 const checkoutSchema = z.object({
   productSlug: z.string().min(1),
@@ -163,7 +163,8 @@ export async function startCheckout(
   const subtotalCents = unitPriceCents * quantity;
 
   const promoInput = (promoCode ?? "").trim().toUpperCase();
-  const promoValue = promoInput ? PROMO_CODES[promoInput] : undefined;
+  // Codes switched off in admin no longer apply.
+  const promoValue = promoInput ? (await activePromoCodes())[promoInput] : undefined;
   const discountCents = promoValue
     ? Math.min(promoValue, subtotalCents - 100)
     : 0;

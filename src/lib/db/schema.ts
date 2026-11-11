@@ -819,6 +819,17 @@ export const webhookEvents = pgTable("webhook_events", {
   }).defaultNow(),
 });
 
+/**
+ * On/off switch for the hand-issued promo codes in `src/lib/promo-codes.ts`.
+ * The codes and amounts stay in code; a row here only records that one has
+ * been switched. No row means the code is on.
+ */
+export const promoCodeSettings = pgTable("promo_code_settings", {
+  code: text("code").primaryKey(),
+  active: boolean("active").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).defaultNow(),
+});
+
 // ---------------------------------------------------------------------------
 // Relations
 // ---------------------------------------------------------------------------

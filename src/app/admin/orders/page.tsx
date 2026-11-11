@@ -6,7 +6,7 @@ import { orders } from "@/lib/db/schema";
 import { demoUserIds } from "@/lib/db/queries/demo-exclusion";
 import { formatDate, formatMoney } from "@/lib/format";
 import { pipelineStage } from "@/lib/orders/status";
-import { markManualPaid, resendPaymentInstructions } from "@/actions/admin/orders";
+import { markManualPaid, removeUnpaidOrder, resendPaymentInstructions } from "@/actions/admin/orders";
 import { paymentMethodLabel } from "@/lib/payments/app-rails";
 import { ActionButton, PromptActionButton } from "@/components/admin/action-button";
 import { Badge } from "@/components/ui/badge";
@@ -119,6 +119,14 @@ export default async function AdminOrdersPage() {
                         successText="Instructions re-sent"
                       >
                         Re-send
+                      </ActionButton>
+                      <ActionButton
+                        action={removeUnpaidOrder.bind(null, o.id)}
+                        variant="ghost"
+                        confirmText={`Remove ${o.orderCode} (${o.user.email}, ${formatMoney(o.totalCents)}) from Awaiting payment? It moves to Failed / incomplete checkouts.`}
+                        successText="Removed"
+                      >
+                        Remove
                       </ActionButton>
                     </TableCell>
                   </TableRow>
