@@ -1,13 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { credentials, deliverables, orders } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth-helpers";
 import {
   canAdvanceFulfillment,
+  fulfilledDateToInstant,
+  shopDateString,
   type FulfillmentStatus,
 } from "@/lib/orders/status";
 import { markOrderPaid } from "@/lib/payments/mark-paid";
@@ -325,5 +327,61 @@ export async function removeUnpaidOrder(orderId: string): Promise<ActionResult> 
   revalidatePath("/admin/orders");
   revalidatePath("/admin/orders/failed");
   revalidatePath("/admin");
+  return { ok: true };
+}
+
+/**
+ * Set the date an order was fulfilled. Used from Awaiting fulfillment when
+ * the owner delivered the account but forgot to mark it, and to correct the
+ * date on an order already marked delivered. The 14-day warranty runs from
+ * this date.
+ */
+export async function setFulfilledDate(
+  orderId: string,
+  day: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+  });
+  if (!order) return { ok: false, error: "Order not found." };
+  if (order.paymentStatus !== "paid") {
+    return { ok: false, error: "Order isn't paid." };
+  }
+  const deliveredAt = fulfilledDateToInstant(day);
+  if (!deliveredAt) {
+    return { ok: false, error: "Pick a valid date that isn't in the future." };
+  }
+  const placedDay = shopDateString(order.paidAt ?? order.createdAt);
+  if (day < placedDay) {
+    return { ok: false, error: "The fulfilled date can't be before the order was paid." };
+  }
+
+  await db
+    .update(deliverables)
+    .set({ status: "delivered", deliveredAt })
+    .where(
+      and(
+        eq(deliverables.orderId, orderId),
+        inArray(deliverables.status, ["pending", "ready", "delivered"]),
+      ),
+    );
+  await db
+    .update(orders)
+    .set({ fulfillmentStatus: "delivered", deliveredAt })
+    .where(eq(orders.id, orderId));
+  await audit({
+    actorUserId: admin.id,
+    action: "order.fulfilled_date_set",
+    entityType: "order",
+    entityId: orderId,
+    metadata: {
+      orderCode: order.orderCode,
+      day,
+      previous: order.deliveredAt?.toISOString() ?? null,
+    },
+  });
+  revalidatePath(`/admin/orders/${order.orderCode}`);
+  revalidatePath("/admin/orders");
   return { ok: true };
 }

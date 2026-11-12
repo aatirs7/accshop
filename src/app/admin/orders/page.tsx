@@ -1,11 +1,17 @@
 import { requireAdminPage } from "@/lib/auth-helpers";
 import Link from "next/link";
-import { and, count, desc, eq, inArray, notInArray, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, ne, notInArray, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { demoUserIds } from "@/lib/db/queries/demo-exclusion";
 import { formatDate, formatMoney } from "@/lib/format";
-import { pipelineStage } from "@/lib/orders/status";
+import {
+  pipelineStage,
+  shopDateString,
+  shopToday,
+  warrantyState,
+} from "@/lib/orders/status";
+import { FulfilledDateForm } from "@/components/admin/fulfilled-date-form";
 import { markManualPaid, removeUnpaidOrder, resendPaymentInstructions } from "@/actions/admin/orders";
 import { paymentMethodLabel } from "@/lib/payments/app-rails";
 import { ActionButton, PromptActionButton } from "@/components/admin/action-button";
@@ -25,7 +31,7 @@ export default async function AdminOrdersPage() {
   const demoIds = await demoUserIds();
   const notDemo = demoIds.length ? notInArray(orders.userId, demoIds) : undefined;
 
-  const [paymentQueue, paidOrders, [{ value: failedCount }]] = await Promise.all([
+  const [paymentQueue, fulfillmentQueue, paidOrders, [{ value: failedCount }]] = await Promise.all([
     db.query.orders.findMany({
       where: and(
         inArray(orders.paymentMethod, ["zelle", "paypal", "venmo", "cashapp"]),
@@ -34,6 +40,16 @@ export default async function AdminOrdersPage() {
       ),
       with: { user: true, product: true },
       orderBy: desc(orders.createdAt),
+    }),
+    // Paid but not marked delivered yet, oldest first so nothing waits long.
+    db.query.orders.findMany({
+      where: and(
+        eq(orders.paymentStatus, "paid"),
+        ne(orders.fulfillmentStatus, "delivered"),
+        notDemo,
+      ),
+      with: { user: true, product: true },
+      orderBy: asc(orders.createdAt),
     }),
     // Only customers who actually paid — abandoned/cancelled checkouts live
     // on the separate "failed" page instead of cluttering this list.
@@ -59,6 +75,8 @@ export default async function AdminOrdersPage() {
         ),
       ),
   ]);
+
+  const today = shopToday();
 
   return (
     <div className="space-y-8">
@@ -137,6 +155,66 @@ export default async function AdminOrdersPage() {
         </Card>
       )}
 
+      {fulfillmentQueue.length > 0 && (
+        <Card className="border-brand-gold/40">
+          <CardHeader>
+            <CardTitle className="text-base text-brand-gold">
+              Awaiting fulfillment ({fulfillmentQueue.length})
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Paid, not marked delivered yet. Pick the day you sent the account
+              and tap Mark fulfilled. The 14-day warranty runs from that day.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Paid</TableHead>
+                  <TableHead className="text-right">Fulfilled on</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fulfillmentQueue.map((o) => {
+                  const paidOn = o.paidAt ?? o.createdAt;
+                  return (
+                    <TableRow key={o.id}>
+                      <TableCell>
+                        <Link
+                          href={`/admin/orders/${o.orderCode}`}
+                          className="font-mono text-brand-gold hover:underline"
+                        >
+                          {o.orderCode}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{o.user.email}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {o.quantity}× {o.product.tierLabel}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(paidOn)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <FulfilledDateForm
+                          orderId={o.id}
+                          defaultDay={today}
+                          minDay={shopDateString(paidOn)}
+                          maxDay={today}
+                          label="Mark fulfilled"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle className="text-base">Paid orders</CardTitle>
@@ -156,6 +234,7 @@ export default async function AdminOrdersPage() {
                 <TableHead>Product</TableHead>
                 <TableHead className="text-right">Amount paid</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Warranty</TableHead>
                 <TableHead>Placed</TableHead>
               </TableRow>
             </TableHeader>
@@ -180,6 +259,11 @@ export default async function AdminOrdersPage() {
                   <TableCell>
                     <Badge variant="outline">{pipelineStage(o).label}</Badge>
                   </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    <WarrantyCell
+                      deliveredAt={o.paymentStatus === "paid" ? o.deliveredAt : null}
+                    />
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {formatDate(o.createdAt)}
                   </TableCell>
@@ -190,5 +274,27 @@ export default async function AdminOrdersPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** Fulfilled date, when the 14-day warranty ends, and days left. */
+function WarrantyCell({ deliveredAt }: { deliveredAt: Date | null }) {
+  const w = warrantyState(deliveredAt);
+  if (w.status === "not_started" || !deliveredAt) return <span>Not fulfilled</span>;
+  if (w.status === "active") {
+    return (
+      <span>
+        <span className="text-foreground">Ends {formatDate(w.expiresAt)}</span>
+        {" · "}
+        {w.daysLeft} {w.daysLeft === 1 ? "day" : "days"} left
+        <span className="block text-xs">Fulfilled {formatDate(deliveredAt)}</span>
+      </span>
+    );
+  }
+  return (
+    <span>
+      Expired {formatDate(w.expiredAt)}
+      <span className="block text-xs">Fulfilled {formatDate(deliveredAt)}</span>
+    </span>
   );
 }

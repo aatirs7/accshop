@@ -71,3 +71,33 @@ export function pipelineStage(order: {
     return { key: "warranty_active", label: "Delivered, warranty active" };
   return { key: "warranty_expired", label: "Delivered, warranty expired" };
 }
+
+/** Business timezone: "today" and typed dates are read on the owner's clock. */
+const SHOP_TZ = "America/New_York";
+
+/** Today's date as YYYY-MM-DD in the shop's timezone. */
+export function shopToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: SHOP_TZ }).format(now);
+}
+
+/** A Date as YYYY-MM-DD in the shop's timezone, for date inputs. */
+export function shopDateString(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: SHOP_TZ }).format(date);
+}
+
+/**
+ * Turn a typed fulfilled date (YYYY-MM-DD) into the moment the warranty
+ * starts. Today means right now; a past day means noon that day, so the
+ * date shown back is the date that was typed.
+ */
+export function fulfilledDateToInstant(
+  day: string,
+  now: Date = new Date(),
+): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const today = shopToday(now);
+  if (day > today) return null;
+  if (day === today) return now;
+  const instant = new Date(`${day}T16:00:00Z`); // midday Eastern
+  return Number.isNaN(instant.getTime()) ? null : instant;
+}
