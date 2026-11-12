@@ -6,7 +6,14 @@ import { db } from "@/lib/db";
 import { deliverables as deliverablesTable, orders, suppliers } from "@/lib/db/schema";
 import { formatDate, formatMoney } from "@/lib/format";
 import { paymentMethodLabel } from "@/lib/payments/app-rails";
-import { nextFulfillmentStatus, pipelineStage } from "@/lib/orders/status";
+import {
+  nextFulfillmentStatus,
+  pipelineStage,
+  shopDateString,
+  shopToday,
+  warrantyState,
+} from "@/lib/orders/status";
+import { FulfilledDateForm } from "@/components/admin/fulfilled-date-form";
 import {
   markManualPaid,
   markOrderDelivered,
@@ -199,6 +206,30 @@ export default async function AdminOrderDetailPage({
               Order fully delivered
               {order.deliveredAt ? ` on ${formatDate(order.deliveredAt)}` : ""}.
             </p>
+          )}
+          {order.paymentStatus === "paid" && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {order.deliveredAt
+                  ? (() => {
+                      const w = warrantyState(order.deliveredAt);
+                      return w.status === "active"
+                        ? `Warranty ends ${formatDate(w.expiresAt)} (${w.daysLeft} ${w.daysLeft === 1 ? "day" : "days"} left). Wrong date? Change it here.`
+                        : w.status === "expired"
+                          ? `Warranty ended ${formatDate(w.expiredAt)}. Wrong date? Change it here.`
+                          : "";
+                    })()
+                  : "Already sent it? Pick the day you did. The 14-day warranty runs from that day."}
+              </p>
+              <FulfilledDateForm
+                orderId={order.id}
+                defaultDay={order.deliveredAt ? shopDateString(order.deliveredAt) : shopToday()}
+                minDay={shopDateString(order.paidAt ?? order.createdAt)}
+                maxDay={shopToday()}
+                label={order.deliveredAt ? "Change fulfilled date" : "Mark fulfilled on this date"}
+                variant="outline"
+              />
+            </div>
           )}
         </CardContent>
       </Card>
