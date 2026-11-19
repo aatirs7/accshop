@@ -20,13 +20,23 @@ const bulkSaleSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
 });
 
-/**
- * Record a bulk order the owner supplied directly to a coach, outside of
- * checkout. Revenue and profit are typed in as dollars; the Overview adds
- * them to the paid-order numbers for whichever period is selected.
- */
-export async function addBulkSale(formData: FormData): Promise<ActionResult> {
-  const admin = await requireAdmin();
+type BulkSaleInput = {
+  coachName: string;
+  accounts: number;
+  revenueCents: number;
+  profitCents: number;
+  soldAt: Date;
+  notes: string | null;
+  // Kept in dollars for the audit log.
+  revenue: number;
+  profit: number;
+  soldOn: string;
+};
+
+/** Validate the bulk-order form; shared by add and edit. */
+function parseBulkSale(
+  formData: FormData,
+): { ok: true; data: BulkSaleInput } | { ok: false; error: string } {
   const parsed = bulkSaleSchema.safeParse({
     coachName: formData.get("coachName"),
     accounts: formData.get("accounts"),
@@ -57,15 +67,43 @@ export async function addBulkSale(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Pick the date of the sale." };
   }
 
-  const [row] = await db
-    .insert(bulkSales)
-    .values({
+  return {
+    ok: true,
+    data: {
       coachName,
       accounts,
       revenueCents: Math.round(revenue * 100),
       profitCents: Math.round(profit * 100),
       soldAt,
       notes: notes || null,
+      revenue,
+      profit,
+      soldOn,
+    },
+  };
+}
+
+/**
+ * Record a bulk order the owner supplied directly to a coach, outside of
+ * checkout. Revenue and profit are typed in as dollars; the Overview adds
+ * them to the paid-order numbers for whichever period is selected.
+ */
+export async function addBulkSale(formData: FormData): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const parsed = parseBulkSale(formData);
+  if (!parsed.ok) return parsed;
+  const { coachName, accounts, revenueCents, profitCents, soldAt, notes, revenue, profit, soldOn } =
+    parsed.data;
+
+  const [row] = await db
+    .insert(bulkSales)
+    .values({
+      coachName,
+      accounts,
+      revenueCents,
+      profitCents,
+      soldAt,
+      notes,
       createdBy: admin.id,
     })
     .returning({ id: bulkSales.id });
@@ -75,6 +113,36 @@ export async function addBulkSale(formData: FormData): Promise<ActionResult> {
     action: "bulk_sale.add",
     entityType: "bulk_sale",
     entityId: row.id,
+    metadata: { coachName, accounts, revenue, profit, soldOn },
+  });
+
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/** Correct a bulk order that was already logged. */
+export async function updateBulkSale(
+  id: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const parsed = parseBulkSale(formData);
+  if (!parsed.ok) return parsed;
+  const { coachName, accounts, revenueCents, profitCents, soldAt, notes, revenue, profit, soldOn } =
+    parsed.data;
+
+  const [updated] = await db
+    .update(bulkSales)
+    .set({ coachName, accounts, revenueCents, profitCents, soldAt, notes })
+    .where(eq(bulkSales.id, id))
+    .returning({ id: bulkSales.id });
+  if (!updated) return { ok: false, error: "That entry no longer exists." };
+
+  await audit({
+    actorUserId: admin.id,
+    action: "bulk_sale.update",
+    entityType: "bulk_sale",
+    entityId: id,
     metadata: { coachName, accounts, revenue, profit, soldOn },
   });
 

@@ -26,6 +26,10 @@ import { MetricsRangePicker } from "@/components/admin/metrics-range-picker";
 import { ActionButton } from "@/components/admin/action-button";
 import { BulkSaleForm } from "@/components/admin/bulk-sale-form";
 import { ManualOrderForm } from "@/components/admin/manual-order-form";
+import {
+  EditBulkSaleButton,
+  EditManualOrderButton,
+} from "@/components/admin/edit-entry-buttons";
 import { ReplacementForm } from "@/components/admin/replacement-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -269,7 +273,17 @@ export default async function AdminOverviewPage({
                     <TableCell className="text-right font-medium text-brand-gold">
                       {o.profitCents ? formatMoney(o.profitCents) : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="whitespace-nowrap text-right">
+                      <EditManualOrderButton
+                        entry={{
+                          id: o.id,
+                          customerName: o.customerName,
+                          soldOn: o.soldAt.toISOString().slice(0, 10),
+                          amountCents: o.amountCents,
+                          profitCents: o.profitCents,
+                          notes: o.notes,
+                        }}
+                      />
                       <ActionButton
                         action={deleteManualOrder.bind(null, o.id)}
                         variant="ghost"
@@ -337,7 +351,18 @@ export default async function AdminOverviewPage({
                     <TableCell className="text-right font-medium text-brand-gold">
                       {formatMoney(b.profitCents)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="whitespace-nowrap text-right">
+                      <EditBulkSaleButton
+                        entry={{
+                          id: b.id,
+                          coachName: b.coachName,
+                          accounts: b.accounts,
+                          soldOn: b.soldAt.toISOString().slice(0, 10),
+                          revenueCents: b.revenueCents,
+                          profitCents: b.profitCents,
+                          notes: b.notes,
+                        }}
+                      />
                       <ActionButton
                         action={deleteBulkSale.bind(null, b.id)}
                         variant="ghost"
