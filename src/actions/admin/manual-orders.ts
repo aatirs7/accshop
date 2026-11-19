@@ -20,13 +20,22 @@ const manualOrderSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
 });
 
-/**
- * Record a single order the owner took by hand, outside of checkout. The
- * amount is typed in as dollars; the Overview adds it to the paid-order and
- * bulk-order numbers for whichever period is selected.
- */
-export async function addManualOrder(formData: FormData): Promise<ActionResult> {
-  const admin = await requireAdmin();
+type ManualOrderInput = {
+  customerName: string;
+  amountCents: number;
+  profitCents: number;
+  soldAt: Date;
+  notes: string | null;
+  // Kept in dollars for the audit log.
+  amount: number;
+  profit: number;
+  soldOn: string;
+};
+
+/** Validate the manual-order form; shared by add and edit. */
+function parseManualOrder(
+  formData: FormData,
+): { ok: true; data: ManualOrderInput } | { ok: false; error: string } {
   const rawProfit = String(formData.get("profit") ?? "").trim();
   const parsed = manualOrderSchema.safeParse({
     customerName: formData.get("customerName"),
@@ -56,14 +65,41 @@ export async function addManualOrder(formData: FormData): Promise<ActionResult> 
     return { ok: false, error: "Pick the date of the order." };
   }
 
-  const [row] = await db
-    .insert(manualOrders)
-    .values({
+  return {
+    ok: true,
+    data: {
       customerName,
       amountCents: Math.round(amount * 100),
       profitCents: Math.round((profit ?? 0) * 100),
       soldAt,
       notes: notes || null,
+      amount,
+      profit: profit ?? 0,
+      soldOn,
+    },
+  };
+}
+
+/**
+ * Record a single order the owner took by hand, outside of checkout. The
+ * amount is typed in as dollars; the Overview adds it to the paid-order and
+ * bulk-order numbers for whichever period is selected.
+ */
+export async function addManualOrder(formData: FormData): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const parsed = parseManualOrder(formData);
+  if (!parsed.ok) return parsed;
+  const { customerName, amountCents, profitCents, soldAt, notes, amount, profit, soldOn } =
+    parsed.data;
+
+  const [row] = await db
+    .insert(manualOrders)
+    .values({
+      customerName,
+      amountCents,
+      profitCents,
+      soldAt,
+      notes,
       createdBy: admin.id,
     })
     .returning({ id: manualOrders.id });
@@ -73,7 +109,37 @@ export async function addManualOrder(formData: FormData): Promise<ActionResult> 
     action: "manual_order.add",
     entityType: "manual_order",
     entityId: row.id,
-    metadata: { customerName, amount, profit: profit ?? 0, soldOn },
+    metadata: { customerName, amount, profit, soldOn },
+  });
+
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/** Correct a manual order that was already logged. */
+export async function updateManualOrder(
+  id: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const parsed = parseManualOrder(formData);
+  if (!parsed.ok) return parsed;
+  const { customerName, amountCents, profitCents, soldAt, notes, amount, profit, soldOn } =
+    parsed.data;
+
+  const [updated] = await db
+    .update(manualOrders)
+    .set({ customerName, amountCents, profitCents, soldAt, notes })
+    .where(eq(manualOrders.id, id))
+    .returning({ id: manualOrders.id });
+  if (!updated) return { ok: false, error: "That entry no longer exists." };
+
+  await audit({
+    actorUserId: admin.id,
+    action: "manual_order.update",
+    entityType: "manual_order",
+    entityId: id,
+    metadata: { customerName, amount, profit, soldOn },
   });
 
   revalidatePath("/admin");
